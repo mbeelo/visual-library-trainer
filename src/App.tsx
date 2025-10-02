@@ -26,6 +26,11 @@ export default function ArtMemoryTrainer() {
   const [timer, setTimer] = useState(0);
   const [targetDuration, setTargetDuration] = useState(0); // 0 means no timer
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+  // Reference timer state
+  const [referenceTimer, setReferenceTimer] = useState(0);
+  const [targetReferenceDuration, setTargetReferenceDuration] = useState(0);
+  const [isReferenceTimerRunning, setIsReferenceTimerRunning] = useState(false);
   const [showListBrowser, setShowListBrowser] = useState(false);
   const [showListCreator, setShowListCreator] = useState(false);
 
@@ -108,6 +113,14 @@ export default function ArtMemoryTrainer() {
     }
     return () => clearInterval(interval);
   }, [isTimerRunning]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isReferenceTimerRunning) {
+      interval = setInterval(() => setReferenceTimer(t => t + 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isReferenceTimerRunning]);
 
   const generateChallenge = () => {
     const selectedAlgorithm = trainingAlgorithms.find(alg => alg.id === settings.selectedAlgorithm) || trainingAlgorithms[0];
@@ -217,6 +230,10 @@ export default function ArtMemoryTrainer() {
   const showReferences = () => {
     setPhase('reference');
     setIsTimerRunning(false);
+    // Reset reference timer when entering reference phase
+    setReferenceTimer(0);
+    setIsReferenceTimerRunning(false);
+    setTargetReferenceDuration(0);
   };
 
   const completeWithRating = (rating: Rating) => {
@@ -232,6 +249,7 @@ export default function ArtMemoryTrainer() {
     }]);
     setPhase('complete');
     setIsTimerRunning(false);
+    setIsReferenceTimerRunning(false);
   };
 
 
@@ -273,6 +291,27 @@ export default function ArtMemoryTrainer() {
 
   const handleTimerPresetChange = (preset: TimerPreset) => {
     setSelectedTimerPreset(preset);
+  };
+
+  const startReferenceTimer = () => {
+    // Set a default 5-minute timer for reference phase
+    setTargetReferenceDuration(300);
+    setReferenceTimer(0);
+    setIsReferenceTimerRunning(true);
+  };
+
+  const stopReferenceTimer = () => {
+    setIsReferenceTimerRunning(false);
+  };
+
+  const practiceSameSubject = () => {
+    // Reset timers and go back to session setup for the same subject
+    setTimer(0);
+    setReferenceTimer(0);
+    setIsTimerRunning(false);
+    setIsReferenceTimerRunning(false);
+    setTargetReferenceDuration(0);
+    setPhase('session-setup');
   };
 
   // Check for auth URL parameters
@@ -373,6 +412,10 @@ export default function ArtMemoryTrainer() {
             timer={timer}
             onCompleteWithRating={completeWithRating}
             onShowUpgrade={() => setShowUpgradeModal(true)}
+            referenceTimer={referenceTimer}
+            targetReferenceDuration={targetReferenceDuration}
+            onStartReferenceTimer={startReferenceTimer}
+            onStopReferenceTimer={stopReferenceTimer}
           />
         )}
 
@@ -382,6 +425,7 @@ export default function ArtMemoryTrainer() {
             timer={timer}
             onGenerateChallenge={generateChallenge}
             onBackToDashboard={() => setPhase('dashboard')}
+            onPracticeSameSubject={practiceSameSubject}
           />
         )}
 

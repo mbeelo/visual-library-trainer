@@ -1,6 +1,6 @@
 import { formatTime, getPinterestUrl, getArtStationUrl, getGoogleUrl } from '../utils';
 import { Rating } from '../types';
-import { Timer, BookOpen, ExternalLink, Star, Smile, ThumbsUp, Frown, X } from 'lucide-react';
+import { Timer, BookOpen, ExternalLink, Star, Smile, ThumbsUp, Frown, X, Play, Pause, Clock } from 'lucide-react';
 import { PersonalImageBoard } from './PersonalImageBoard';
 import { ImageUrlInput } from './ImageUrlInput';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,6 +13,10 @@ interface ReferencePhaseProps {
   timer: number;
   onCompleteWithRating: (rating: Rating) => void;
   onShowUpgrade?: () => void;
+  referenceTimer?: number;
+  targetReferenceDuration?: number;
+  onStartReferenceTimer?: () => void;
+  onStopReferenceTimer?: () => void;
 }
 
 export default function ReferencePhase({
@@ -20,7 +24,11 @@ export default function ReferencePhase({
   currentCategory,
   timer,
   onCompleteWithRating,
-  onShowUpgrade
+  onShowUpgrade,
+  referenceTimer = 0,
+  targetReferenceDuration = 0,
+  onStartReferenceTimer,
+  onStopReferenceTimer
 }: ReferencePhaseProps) {
   const { user, subscriptionTier } = useAuth();
   const [imageCount, setImageCount] = useState(0);
@@ -54,6 +62,12 @@ export default function ReferencePhase({
   const handleImageAdded = () => {
     checkCanAddMore();
   };
+
+  const referenceProgress = targetReferenceDuration > 0 ? Math.min((referenceTimer / targetReferenceDuration) * 100, 100) : 0;
+  const isReferenceTimeUp = targetReferenceDuration > 0 && referenceTimer >= targetReferenceDuration;
+  const referenceTimeRemaining = targetReferenceDuration > 0 ? Math.max(0, targetReferenceDuration - referenceTimer) : 0;
+  const isReferenceWarning = referenceProgress >= 75 && referenceProgress < 100;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -90,6 +104,123 @@ export default function ReferencePhase({
           <p className="text-gray-600">Now study references to see how you did</p>
         </div>
       </div>
+
+      {/* Reference Timer Section */}
+      {targetReferenceDuration > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Timer Display */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                isReferenceTimeUp ? 'bg-red-50' : isReferenceWarning ? 'bg-orange-50' : 'bg-green-50'
+              }`}>
+                <Clock className={`w-6 h-6 ${
+                  isReferenceTimeUp ? 'text-red-600' : isReferenceWarning ? 'text-orange-600' : 'text-green-600'
+                }`} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Reference Time Remaining</h3>
+                <p className="text-sm text-gray-600">
+                  {isReferenceTimeUp ? 'Time is up!' : isReferenceWarning ? 'Almost finished' : 'Study the references'}
+                </p>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <div className={`text-5xl font-bold mb-4 ${
+                isReferenceTimeUp ? 'text-red-600' : isReferenceWarning ? 'text-orange-600' : 'text-gray-900'
+              }`}>
+                {formatTime(referenceTimeRemaining)}
+              </div>
+
+              <div className="flex justify-center gap-3">
+                {onStartReferenceTimer && (
+                  <button
+                    onClick={onStartReferenceTimer}
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors inline-flex items-center gap-2"
+                  >
+                    <Play className="w-4 h-4" />
+                    Start Timer
+                  </button>
+                )}
+                {onStopReferenceTimer && (
+                  <button
+                    onClick={onStopReferenceTimer}
+                    className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors inline-flex items-center gap-2"
+                  >
+                    <Pause className="w-4 h-4" />
+                    Stop Timer
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Progress Tracking */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                <Timer className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Study Progress</h3>
+                <p className="text-sm text-gray-600">{Math.round(referenceProgress)}% complete</p>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="space-y-4">
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div
+                  className={`h-3 rounded-full transition-all duration-1000 ${
+                    isReferenceTimeUp ? 'bg-red-500' : isReferenceWarning ? 'bg-orange-500' : 'bg-green-600'
+                  }`}
+                  style={{ width: `${referenceProgress}%` }}
+                ></div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-gray-900">{Math.round(referenceProgress)}%</div>
+                  <div className="text-xs text-gray-500">Complete</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-gray-900">{formatTime(referenceTimer)}</div>
+                  <div className="text-xs text-gray-500">Elapsed</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-gray-900">{formatTime(targetReferenceDuration)}</div>
+                  <div className="text-xs text-gray-500">Total</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : onStartReferenceTimer ? (
+        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center">
+              <Clock className="w-6 h-6 text-gray-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Optional Reference Timer</h3>
+              <p className="text-sm text-gray-600">Set a time limit for studying references</p>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <div className="text-4xl font-bold text-gray-900 mb-4">{formatTime(referenceTimer)}</div>
+            <p className="text-gray-600 mb-4">Time spent studying</p>
+            <button
+              onClick={onStartReferenceTimer}
+              className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors inline-flex items-center gap-2"
+            >
+              <Play className="w-5 h-5" />
+              Start Study Timer
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {/* Personal Image Collection */}
       {user && currentItem && (

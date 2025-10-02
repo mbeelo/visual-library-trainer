@@ -1,4 +1,4 @@
-import { Play, RotateCcw, CheckCircle, Target, TrendingUp } from 'lucide-react';
+import { Play, RotateCcw, CheckCircle, Target, TrendingUp, RefreshCw } from 'lucide-react';
 import { formatTime } from '../utils';
 
 interface CompletePhaseProps {
@@ -6,13 +6,15 @@ interface CompletePhaseProps {
   timer: number;
   onGenerateChallenge: () => void;
   onBackToDashboard: () => void;
+  onPracticeSameSubject: () => void;
 }
 
 export default function CompletePhase({
   currentItem,
   timer,
   onGenerateChallenge,
-  onBackToDashboard
+  onBackToDashboard,
+  onPracticeSameSubject
 }: CompletePhaseProps) {
   return (
     <div className="space-y-6">
@@ -74,6 +76,13 @@ export default function CompletePhase({
 
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <button
+          onClick={onPracticeSameSubject}
+          className="bg-green-600 hover:bg-green-700 text-white font-medium px-8 py-4 rounded-lg transition-all shadow-sm hover:shadow-md inline-flex items-center justify-center gap-3"
+        >
+          <RefreshCw className="w-5 h-5" />
+          <span className="text-lg">Practice Same Subject</span>
+        </button>
         <button
           onClick={onGenerateChallenge}
           className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-4 rounded-lg transition-all shadow-sm hover:shadow-md inline-flex items-center justify-center gap-3"
