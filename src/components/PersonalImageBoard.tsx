@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { Trash2, ExternalLink, StickyNote, ImageIcon } from 'lucide-react'
+import { Trash2, ExternalLink, StickyNote, ImageIcon, X } from 'lucide-react'
 import { BoardImage } from '../services/boardService'
 import { BoardService } from '../services/boardService'
 import { useAuth } from '../contexts/AuthContext'
@@ -17,6 +17,12 @@ export function PersonalImageBoard({
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [imageLoadStates, setImageLoadStates] = useState<Record<string, 'loading' | 'loaded' | 'error'>>({})
+  const [expandedImage, setExpandedImage] = useState<BoardImage | null>(null)
+
+  // Debug log for expanded image state changes
+  useEffect(() => {
+    console.log('🔍 Expanded image state changed:', expandedImage)
+  }, [expandedImage])
   const containerRef = useRef<HTMLDivElement>(null)
 
   const { user } = useAuth()
@@ -29,6 +35,25 @@ export function PersonalImageBoard({
       setLoading(false)
     }
   }, [user?.id, drawingSubject]) // Only depend on user.id, not the entire user object
+
+  // Keyboard navigation for expanded image
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (expandedImage && e.key === 'Escape') {
+        setExpandedImage(null)
+      }
+    }
+
+    if (expandedImage) {
+      document.addEventListener('keydown', handleKeyPress)
+      document.body.style.overflow = 'hidden' // Prevent background scroll
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress)
+      document.body.style.overflow = 'unset'
+    }
+  }, [expandedImage])
 
   const loadImages = async () => {
     if (!user) return
@@ -86,7 +111,13 @@ export function PersonalImageBoard({
     }
   }
 
-  const handleImageClick = (url: string) => {
+  const handleImageClick = (image: BoardImage) => {
+    console.log('🖼️ Image clicked:', image.image_url)
+    console.log('📸 Setting expanded image:', image)
+    setExpandedImage(image)
+  }
+
+  const handleImageUrlClick = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
@@ -182,7 +213,7 @@ export function PersonalImageBoard({
               {/* Image Container */}
               <div
                 className="relative cursor-pointer overflow-hidden"
-                onClick={() => handleImageClick(image.image_url)}
+                onClick={() => handleImageClick(image)}
               >
                 {loadState === 'loading' && (
                   <div className="w-full h-48 bg-gray-100 animate-pulse flex items-center justify-center">
@@ -216,12 +247,12 @@ export function PersonalImageBoard({
               </div>
 
               {/* Overlay controls */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
-                <div className="flex gap-2">
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none">
+                <div className="flex gap-2 pointer-events-auto">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleImageClick(image.image_url)
+                      handleImageUrlClick(image.image_url)
                     }}
                     className="bg-white/90 backdrop-blur-sm hover:bg-white text-gray-700 p-2.5 rounded-full transition-all hover:scale-110 shadow-lg"
                     title="Open in new tab"
@@ -264,6 +295,76 @@ export function PersonalImageBoard({
           )
         })}
       </div>
+
+      {/* Expanded Image View */}
+      {expandedImage && (
+        <div
+          className="fixed bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          style={{
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            margin: 0,
+            padding: '1rem'
+          }}
+          onClick={() => setExpandedImage(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-full bg-white rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setExpandedImage(null)}
+              className="absolute top-4 right-4 z-10 bg-white/90 backdrop-blur-sm hover:bg-white text-gray-700 p-2 rounded-full transition-all hover:scale-110 shadow-lg"
+              title="Close"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Image */}
+            <img
+              src={expandedImage.image_url}
+              alt={expandedImage.title || "Reference"}
+              className="max-w-full max-h-[80vh] object-contain"
+            />
+
+            {/* Image info and actions */}
+            <div className="p-4 bg-white border-t border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-900">{expandedImage.title}</h3>
+                  {expandedImage.notes && (
+                    <p className="text-sm text-gray-600 mt-1">{expandedImage.notes}</p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleImageUrlClick(expandedImage.image_url)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                    title="Open original"
+                  >
+                    <ExternalLink size={16} />
+                    Open Original
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleDeleteImage(expandedImage.id)
+                      setExpandedImage(null)
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                    title="Remove from collection"
+                  >
+                    <Trash2 size={16} />
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="text-xs text-gray-500 text-center bg-gray-50 p-3 rounded-lg">
         💡 <strong>Pro tip:</strong> Click images to view full size • Right-click images to copy or save • Each reference improves your visual memory

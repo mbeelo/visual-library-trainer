@@ -87,7 +87,84 @@ export class BoardService {
       throw error
     }
 
+    // If no images found in new system, check for legacy data to migrate
+    if ((!data || data.length === 0)) {
+      try {
+        console.log('No images found in board system, checking for legacy data...')
+        await this.migrateLegacyDataForUser(userId, subject)
+
+        // Re-fetch after potential migration
+        const { data: newData, error: newError } = await supabase
+          .from('board_images')
+          .select('*')
+          .eq('board_id', board.id)
+          .order('position', { ascending: true })
+
+        if (newError) {
+          console.error('Error fetching board images after migration:', newError)
+          return data || []
+        }
+
+        return newData || data || []
+      } catch (migrationError) {
+        console.log('Legacy migration check failed (expected if no legacy data):', migrationError)
+        return data || []
+      }
+    }
+
     return data || []
+  }
+
+  // Helper function to migrate legacy data for a specific user/subject
+  private static async migrateLegacyDataForUser(userId: string, subject: string): Promise<void> {
+    // Check if there's data in the old image_collections table for this user/subject
+    const { data: legacyData, error: legacyError } = await supabase
+      .from('image_collections')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('drawing_subject', subject)
+
+    if (legacyError || !legacyData || legacyData.length === 0) {
+      return // No legacy data to migrate
+    }
+
+    console.log(`Found ${legacyData.length} legacy images for ${subject}, migrating...`)
+
+    // Get the board for this subject
+    const board = await this.getOrCreateSubjectBoard(userId, subject)
+
+    // Migrate each legacy image
+    for (const legacyImage of legacyData) {
+      try {
+        await supabase
+          .from('board_images')
+          .insert([{
+            board_id: board.id,
+            image_url: legacyImage.image_url,
+            title: subject,
+            notes: legacyImage.notes,
+            position: legacyImage.position || 0,
+            added_at: legacyImage.created_at
+          }])
+          .select()
+          .single()
+
+        console.log(`Migrated legacy image: ${legacyImage.image_url}`)
+      } catch (insertError: any) {
+        // Ignore duplicate errors (image already migrated)
+        if (!insertError.message?.includes('duplicate')) {
+          console.error('Error migrating legacy image:', insertError)
+        }
+      }
+    }
+
+    // Update board timestamp
+    await supabase
+      .from('subject_boards')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', board.id)
+
+    console.log(`Successfully migrated ${legacyData.length} images for ${subject}`)
   }
 
   // Add image to subject board

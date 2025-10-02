@@ -173,11 +173,13 @@ STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 - **Features**: Google OAuth, email/password, progressive signup
 - **Files**: `src/contexts/AuthContext.tsx`, `src/components/AuthModal.tsx`
 
-#### Image Collection System
+#### **🎨 Pinterest-Style Board System** (MAJOR v2.1 Feature)
 - **Components**: `PersonalImageBoard`, `ImageUrlInput`, enhanced `ReferencePhase`
-- **Features**: Pinterest-style grid, URL validation, image management
+- **Features**: Contextual board creation, Pinterest masonry layout, integrated curation
 - **Files**: `src/components/PersonalImageBoard.tsx`, `src/components/ImageUrlInput.tsx`
-- **Service**: `src/services/imageCollections.ts`
+- **Service**: `src/services/boardService.ts` (NEW - Pinterest architecture)
+- **Database**: `subject_boards`, `board_images` tables with full RLS security
+- **UX**: Automatic board per drawing subject, hover interactions, seamless saving
 
 #### Payment Integration
 - **Components**: `UpgradeModal` with Stripe checkout
@@ -190,13 +192,17 @@ STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 - **Files**: `src/components/MigrationPrompt.tsx`, `src/services/dataMigration.ts`
 
 #### Database Schema
-- **Tables**: users, image_collections, practice_sessions, custom_lists
+- **Tables**: users, subject_boards, board_images, practice_sessions, custom_lists
 - **Types**: Complete TypeScript definitions in `src/types/index.ts`
 - **Service**: Database client in `src/lib/supabase.ts`
+- **Migration**: `reference-boards-migration.sql`, `board-migration-fixes.sql`
 
-### 🚀 **Ready for Launch**
+### 🚀 **Production Ready - v2.1**
 - All TypeScript errors resolved ✅
 - ESLint passes ✅
 - Build successful ✅
 - Components exported ✅
 - Environment configured ✅
+- **Pinterest board system fully functional** ✅
+- **Critical bugs fixed (infinite loading, persistence)** ✅
+- **Database migration applied successfully** ✅

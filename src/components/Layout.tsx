@@ -7,6 +7,8 @@ import { useState } from 'react'
 import Toast from './Toast'
 import { AuthModal } from './AuthModal'
 import { UpgradeModal } from './UpgradeModal'
+import ListBrowser from './ListBrowser'
+import ListCreator from './ListCreator'
 import { ModalProvider } from '../contexts/ModalContext'
 
 export function Layout() {
@@ -93,6 +95,27 @@ export function Layout() {
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
         />
+
+        {showListBrowser && (
+          <ListBrowser
+            isOpen={showListBrowser}
+            onClose={() => setShowListBrowser(false)}
+            allLists={allLists}
+            activeList={activeList}
+            onSetActiveList={setActiveList}
+          />
+        )}
+
+        {showListCreator && (
+          <ListCreator
+            isOpen={showListCreator}
+            onClose={() => setShowListCreator(false)}
+            onListCreated={(newList) => {
+              setActiveList(newList)
+              setShowListCreator(false)
+            }}
+          />
+        )}
 
         <footer className="mt-16 text-center">
           <div className="text-gray-500 text-sm font-medium">

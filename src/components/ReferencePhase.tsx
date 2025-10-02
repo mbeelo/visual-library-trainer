@@ -1,4 +1,4 @@
-import { formatTime, getPinterestUrl, getArtStationUrl, getGoogleUrl } from '../utils';
+import { formatTime, getPinterestUrl, getArtStationUrl, getGoogleUrl, getUnsplashUrl, getPexelsUrl, getPixabayUrl } from '../utils';
 import { Rating } from '../types';
 import { Timer, BookOpen, ExternalLink, Star, Smile, ThumbsUp, Frown, X, Play, Pause, Clock } from 'lucide-react';
 import { PersonalImageBoard } from './PersonalImageBoard';
@@ -314,7 +314,7 @@ export default function ReferencePhase({
         </div>
 
         <div className="p-6">
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <a
               href={getPinterestUrl(currentItem || '')}
               target="_blank"
@@ -375,6 +375,69 @@ export default function ReferencePhase({
 
               <div className="bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium group-hover:bg-gray-800 transition-colors text-center">
                 Search Images
+              </div>
+            </a>
+
+            <a
+              href={getUnsplashUrl(currentItem || '')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group bg-white border border-gray-200 rounded-lg p-6 hover:border-green-300 hover:shadow-md transition-all"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl">📸</span>
+                </div>
+                <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-green-500" />
+              </div>
+
+              <h4 className="font-semibold text-gray-900 mb-2">Unsplash</h4>
+              <p className="text-sm text-gray-600 mb-4">High-quality photography references</p>
+
+              <div className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium group-hover:bg-green-700 transition-colors text-center">
+                Browse Photos
+              </div>
+            </a>
+
+            <a
+              href={getPexelsUrl(currentItem || '')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group bg-white border border-gray-200 rounded-lg p-6 hover:border-purple-300 hover:shadow-md transition-all"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl">🎭</span>
+                </div>
+                <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-purple-500" />
+              </div>
+
+              <h4 className="font-semibold text-gray-900 mb-2">Pexels</h4>
+              <p className="text-sm text-gray-600 mb-4">Free stock photos and videos</p>
+
+              <div className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium group-hover:bg-purple-700 transition-colors text-center">
+                Find Photos
+              </div>
+            </a>
+
+            <a
+              href={getPixabayUrl(currentItem || '')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group bg-white border border-gray-200 rounded-lg p-6 hover:border-orange-300 hover:shadow-md transition-all"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl">🌈</span>
+                </div>
+                <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-orange-500" />
+              </div>
+
+              <h4 className="font-semibold text-gray-900 mb-2">Pixabay</h4>
+              <p className="text-sm text-gray-600 mb-4">Free images, vectors and illustrations</p>
+
+              <div className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium group-hover:bg-orange-700 transition-colors text-center">
+                Explore Images
               </div>
             </a>
           </div>

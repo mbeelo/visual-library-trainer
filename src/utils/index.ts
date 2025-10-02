@@ -1,5 +1,5 @@
 export { formatTime } from './time.js';
-export { getPinterestUrl, getArtStationUrl, getGoogleUrl } from './references.js';
+export { getPinterestUrl, getArtStationUrl, getGoogleUrl, getUnsplashUrl, getPexelsUrl, getPixabayUrl } from './references.js';
 export { getRatingColor } from './styling.js';
 export {
   generateListId,
