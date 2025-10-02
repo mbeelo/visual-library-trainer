@@ -14,6 +14,10 @@ import {
   CompletePhase,
   Toast
 } from './components';
+import { AuthProvider } from './contexts/AuthContext';
+import { AuthModal } from './components/AuthModal';
+import { UpgradeModal } from './components/UpgradeModal';
+import { MigrationPrompt } from './components/MigrationPrompt';
 
 export default function ArtMemoryTrainer() {
   const [phase, setPhase] = useState<Phase>('welcome');
@@ -24,6 +28,15 @@ export default function ArtMemoryTrainer() {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [showListBrowser, setShowListBrowser] = useState(false);
   const [showListCreator, setShowListCreator] = useState(false);
+
+  // Auth modal state
+  const [authModal, setAuthModal] = useState<{
+    isOpen: boolean;
+    mode: 'signin' | 'signup';
+  }>({ isOpen: false, mode: 'signin' });
+
+  // Upgrade modal state
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Toast state
   const [toast, setToast] = useState<{
@@ -89,7 +102,7 @@ export default function ArtMemoryTrainer() {
   };
 
   useEffect(() => {
-    let interval: number;
+    let interval: NodeJS.Timeout;
     if (isTimerRunning) {
       interval = setInterval(() => setTimer(t => t + 1), 1000);
     }
@@ -262,13 +275,34 @@ export default function ArtMemoryTrainer() {
     setSelectedTimerPreset(preset);
   };
 
+  // Check for auth URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const authParam = urlParams.get('auth');
+    if (authParam === 'signin' || authParam === 'signup') {
+      setAuthModal({ isOpen: true, mode: authParam });
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
 
   if (phase === 'welcome') {
-    return <Welcome onStartPractice={startPractice} />;
+    return (
+      <AuthProvider>
+        <Welcome onStartPractice={startPractice} />
+        <AuthModal
+          isOpen={authModal.isOpen}
+          onClose={() => setAuthModal({ ...authModal, isOpen: false })}
+          mode={authModal.mode}
+        />
+      </AuthProvider>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <AuthProvider>
+      <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
         <Header
           activeList={activeList}
@@ -279,6 +313,7 @@ export default function ArtMemoryTrainer() {
           showListCreator={showListCreator}
           setShowListCreator={setShowListCreator}
           onNavigateHome={navigateHome}
+          onShowAuth={(mode) => setAuthModal({ isOpen: true, mode })}
         />
 
         <ListBrowser
@@ -337,6 +372,7 @@ export default function ArtMemoryTrainer() {
             currentCategory={currentCategory}
             timer={timer}
             onCompleteWithRating={completeWithRating}
+            onShowUpgrade={() => setShowUpgradeModal(true)}
           />
         )}
 
@@ -356,6 +392,24 @@ export default function ArtMemoryTrainer() {
           onClose={hideToast}
         />
 
+        <AuthModal
+          isOpen={authModal.isOpen}
+          onClose={() => setAuthModal({ ...authModal, isOpen: false })}
+          mode={authModal.mode}
+        />
+
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+        />
+
+        <MigrationPrompt
+          onComplete={() => {
+            // Migration completed or skipped
+            console.log('Migration process completed')
+          }}
+        />
+
         {/* Footer */}
         <footer className="mt-16 text-center">
           <div className="text-gray-500 text-sm font-medium">
@@ -371,5 +425,6 @@ export default function ArtMemoryTrainer() {
         </footer>
       </div>
     </div>
+    </AuthProvider>
   );
 }

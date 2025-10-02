@@ -1,4 +1,4 @@
-import { Play, RotateCcw, CheckCircle, Timer, Target, TrendingUp } from 'lucide-react';
+import { Play, RotateCcw, CheckCircle, Target, TrendingUp } from 'lucide-react';
 import { formatTime } from '../utils';
 
 interface CompletePhaseProps {

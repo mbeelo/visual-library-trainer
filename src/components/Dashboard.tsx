@@ -35,7 +35,6 @@ export default function Dashboard({
   generateChallenge,
   history,
   itemRatings,
-  timer,
   soundEnabled,
   setSoundEnabled,
   selectedAlgorithm,
@@ -57,7 +56,6 @@ export default function Dashboard({
     return entryDate >= weekAgo;
   });
 
-  const sessionTrend = last7Days.length - (history.length - last7Days.length > 7 ? 7 : history.length - last7Days.length);
 
   return (
     <div className="space-y-6">

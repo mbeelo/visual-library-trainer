@@ -8,3 +8,8 @@ export { default as DrawingPhase } from './DrawingPhase';
 export { default as ReferencePhase } from './ReferencePhase';
 export { default as CompletePhase } from './CompletePhase';
 export { default as Toast } from './Toast';
+export { AuthModal } from './AuthModal';
+export { ImageUrlInput } from './ImageUrlInput';
+export { PersonalImageBoard } from './PersonalImageBoard';
+export { UpgradeModal } from './UpgradeModal';
+export { MigrationPrompt } from './MigrationPrompt';

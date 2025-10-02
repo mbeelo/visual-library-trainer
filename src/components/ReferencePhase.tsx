@@ -1,20 +1,59 @@
 import { formatTime, getPinterestUrl, getArtStationUrl, getGoogleUrl } from '../utils';
 import { Rating } from '../types';
 import { Timer, BookOpen, ExternalLink, Star, Smile, ThumbsUp, Frown, X } from 'lucide-react';
+import { PersonalImageBoard } from './PersonalImageBoard';
+import { ImageUrlInput } from './ImageUrlInput';
+import { useAuth } from '../contexts/AuthContext';
+import { ImageCollectionService } from '../services/imageCollections';
+import { useState, useEffect } from 'react';
 
 interface ReferencePhaseProps {
   currentItem: string | null;
   currentCategory: string | null;
   timer: number;
   onCompleteWithRating: (rating: Rating) => void;
+  onShowUpgrade?: () => void;
 }
 
 export default function ReferencePhase({
   currentItem,
   currentCategory,
   timer,
-  onCompleteWithRating
+  onCompleteWithRating,
+  onShowUpgrade
 }: ReferencePhaseProps) {
+  const { user, subscriptionTier } = useAuth();
+  const [imageCount, setImageCount] = useState(0);
+  const [canAddMore, setCanAddMore] = useState(false);
+
+  useEffect(() => {
+    if (user && currentItem) {
+      checkCanAddMore();
+    }
+  }, [user, currentItem, subscriptionTier, imageCount]);
+
+  const checkCanAddMore = async () => {
+    if (!user || !currentItem) return;
+
+    try {
+      const allowed = await ImageCollectionService.canAddImage(
+        user.id,
+        currentItem,
+        subscriptionTier
+      );
+      setCanAddMore(allowed);
+    } catch (error) {
+      console.error('Error checking image limit:', error);
+    }
+  };
+
+  const handleUpgradeNeeded = () => {
+    onShowUpgrade?.();
+  };
+
+  const handleImageAdded = () => {
+    checkCanAddMore();
+  };
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -52,11 +91,51 @@ export default function ReferencePhase({
         </div>
       </div>
 
+      {/* Personal Image Collection */}
+      {user && currentItem && (
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Your Personal Collection</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  {subscriptionTier === 'free' && imageCount >= 3
+                    ? `Free tier: ${imageCount}/3 images saved`
+                    : `Saved references for "${currentItem}"`
+                  }
+                </p>
+              </div>
+              {subscriptionTier === 'free' && imageCount >= 3 && (
+                <button
+                  onClick={handleUpgradeNeeded}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  Upgrade for Unlimited
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <PersonalImageBoard
+              drawingSubject={currentItem}
+              onImageCountChange={setImageCount}
+            />
+            <ImageUrlInput
+              drawingSubject={currentItem}
+              onImageAdded={handleImageAdded}
+              canAddMore={canAddMore}
+              onUpgradeNeeded={handleUpgradeNeeded}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Reference Sources */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Reference Sources</h3>
-          <p className="text-sm text-gray-600 mt-1">Study these references to improve your drawing</p>
+          <h3 className="text-lg font-semibold text-gray-900">Search for New References</h3>
+          <p className="text-sm text-gray-600 mt-1">Find images to add to your personal collection</p>
         </div>
 
         <div className="p-6">

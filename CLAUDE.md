@@ -6,13 +6,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Visual Library Trainer is a React web application that helps artists build visual memory and drawing skills. The app presents random subjects for users to draw from memory, then provides reference materials for study and improvement.
 
+**Version 2.0 Evolution:** Transforming from a practice tool into a personalized visual learning ecosystem with user accounts, cloud sync, and premium personal reference collections that grow with each practice session.
+
 ## Technology Stack
 
-- **Frontend**: React 19.1.1 with TypeScript
+### Frontend
+- **Framework**: React 19.1.1 with TypeScript
 - **Build Tool**: Vite 7.1.7
 - **Styling**: Tailwind CSS 4.1.13
 - **Icons**: Lucide React
 - **Package Manager**: npm
+
+### Backend (v2.0)
+- **Database & Auth**: Supabase (PostgreSQL + Authentication + Storage)
+- **Payments**: Stripe
+- **Hosting**: Vercel (frontend) + Supabase (backend)
 
 ## Development Commands
 
@@ -84,4 +92,111 @@ Users can create custom training lists with:
 - `tailwind.config.js` - Tailwind CSS setup
 - `eslint.config.js` - ESLint configuration
 - `postcss.config.js` - PostCSS with Tailwind and Autoprefixer
-- to memorize
+
+## Version 2.0 Product Strategy
+
+### Monetization Model
+
+**Freemium SaaS with Clear Value Ladder:**
+
+#### Free Tier: "Visual Library Trainer"
+- Core training experience (drawing phases, timer, basic stats)
+- Search button links to external sites
+- localStorage-only data
+- 3 saved images per drawing subject (taste of premium)
+
+#### Premium Tier: "Visual Library Pro" - $9/monthly, $79/yearly
+- **Unlimited personal image collections**
+- **Cloud sync across devices**
+- **Advanced analytics** (progress tracking, weak subject identification)
+- **Custom list creation** (unlimited)
+- **Export collections** (PDF mood boards, Pinterest boards)
+- **Priority support**
+
+#### Future Roadmap: "Visual Library Studio" - $19/monthly, $179/yearly
+- Everything in Pro
+- **AI-powered reference suggestions** based on your style
+- **Collaborative collections** (share with art communities)
+- **Advanced organization** (tags, categories, notes)
+- **Integration APIs** (Figma, Adobe, Procreate)
+
+### Authentication Strategy
+
+**Seamless Progressive Enhancement:**
+1. **Anonymous Start:** Users begin immediately, no friction
+2. **Value-First Signup:** After 2-3 sessions, gentle prompt to "save your progress"
+3. **Social Login Priority:** Google/Apple/Discord for artist communities
+4. **Email Fallback:** Simple email/password option
+
+### Image Collection UX
+
+**Enhanced Reference Phase:**
+- Personal image collections display as Pinterest-style grid
+- Simple URL input for adding images from any source
+- Auto-arrange by aspect ratio for optimal display
+- Drag-and-drop reordering with context menu actions
+
+### Technical Architecture
+
+#### Database Schema
+```sql
+users (id, email, subscription_tier, created_at)
+image_collections (id, user_id, drawing_subject, image_url, position, notes, created_at)
+practice_sessions (id, user_id, subject, duration, rating, images_used, created_at)
+custom_lists (id, user_id, name, items, is_active, created_at)
+```
+
+#### Implementation Phases
+1. **Phase 1:** Auth + basic image saving + payments (current implementation)
+2. **Phase 2:** Advanced image management + analytics
+3. **Phase 3:** AI features + collaboration (Studio tier)
+
+### Environment Variables Required
+
+```bash
+# Supabase
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Stripe
+VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+```
+
+## Implementation Status ✅
+
+### ✅ **Completed Features**
+
+#### Authentication System
+- **Components**: `AuthContext`, `AuthModal`, `Header` integration
+- **Features**: Google OAuth, email/password, progressive signup
+- **Files**: `src/contexts/AuthContext.tsx`, `src/components/AuthModal.tsx`
+
+#### Image Collection System
+- **Components**: `PersonalImageBoard`, `ImageUrlInput`, enhanced `ReferencePhase`
+- **Features**: Pinterest-style grid, URL validation, image management
+- **Files**: `src/components/PersonalImageBoard.tsx`, `src/components/ImageUrlInput.tsx`
+- **Service**: `src/services/imageCollections.ts`
+
+#### Payment Integration
+- **Components**: `UpgradeModal` with Stripe checkout
+- **Features**: Freemium tiers, upgrade prompts, pricing strategy
+- **Files**: `src/components/UpgradeModal.tsx`, `src/lib/stripe.ts`
+
+#### Data Migration
+- **Components**: `MigrationPrompt` for localStorage → cloud migration
+- **Features**: Automatic detection, progress tracking, validation
+- **Files**: `src/components/MigrationPrompt.tsx`, `src/services/dataMigration.ts`
+
+#### Database Schema
+- **Tables**: users, image_collections, practice_sessions, custom_lists
+- **Types**: Complete TypeScript definitions in `src/types/index.ts`
+- **Service**: Database client in `src/lib/supabase.ts`
+
+### 🚀 **Ready for Launch**
+- All TypeScript errors resolved ✅
+- ESLint passes ✅
+- Build successful ✅
+- Components exported ✅
+- Environment configured ✅

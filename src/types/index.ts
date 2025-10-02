@@ -61,3 +61,35 @@ export interface CustomListData {
 export type Phase = 'welcome' | 'dashboard' | 'session-setup' | 'drawing' | 'reference' | 'complete';
 export type Rating = 'easy' | 'got-it' | 'struggled' | 'failed';
 export type ItemRatings = Record<string, Rating>;
+
+// Image Collection Types
+export interface ImageCollection {
+  id: string;
+  user_id: string;
+  drawing_subject: string;
+  image_url: string;
+  position: number;
+  notes?: string;
+  created_at: string;
+}
+
+export interface ImageCollectionInput {
+  drawing_subject: string;
+  image_url: string;
+  notes?: string;
+}
+
+// Subscription Types
+export type SubscriptionTier = 'free' | 'pro';
+
+export interface User {
+  id: string;
+  email: string;
+  subscription_tier: SubscriptionTier;
+  created_at: string;
+}
+
+// Enhanced History Entry with image usage
+export interface EnhancedHistoryEntry extends HistoryEntry {
+  images_used?: number;
+}
