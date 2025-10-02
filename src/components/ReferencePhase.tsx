@@ -13,6 +13,7 @@ interface ReferencePhaseProps {
   timer: number;
   onCompleteWithRating: (rating: Rating) => void;
   onShowUpgrade?: () => void;
+  onShowAuth?: (mode: 'signin' | 'signup') => void;
   referenceTimer?: number;
   targetReferenceDuration?: number;
   onStartReferenceTimer?: () => void;
@@ -25,6 +26,7 @@ export default function ReferencePhase({
   timer,
   onCompleteWithRating,
   onShowUpgrade,
+  onShowAuth,
   referenceTimer = 0,
   targetReferenceDuration = 0,
   onStartReferenceTimer,
@@ -32,17 +34,31 @@ export default function ReferencePhase({
 }: ReferencePhaseProps) {
   const { user, subscriptionTier } = useAuth();
   const [imageCount, setImageCount] = useState(0);
-  const [canAddMore, setCanAddMore] = useState(false);
+  const [canAddMore, setCanAddMore] = useState(true); // Start optimistic for better UX
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    if (user && currentItem) {
-      checkCanAddMore();
-    }
+    checkCanAddMore();
   }, [user, currentItem, subscriptionTier, imageCount]);
 
   const checkCanAddMore = async () => {
-    if (!user || !currentItem) return;
+    if (!user || !currentItem) {
+      return;
+    }
 
+    // For pro users, always allow
+    if (subscriptionTier === 'pro') {
+      setCanAddMore(true);
+      return;
+    }
+
+    // For free users, use the current imageCount if available (faster)
+    if (imageCount >= 0) {
+      setCanAddMore(imageCount < 3);
+      return;
+    }
+
+    // Fallback: query database
     try {
       const allowed = await ImageCollectionService.canAddImage(
         user.id,
@@ -51,7 +67,13 @@ export default function ReferencePhase({
       );
       setCanAddMore(allowed);
     } catch (error) {
-      console.error('Error checking image limit:', error);
+      console.log('Database not ready, checking localStorage for image limit');
+
+      // Fallback: check localStorage for free tier limit
+      const localImages = JSON.parse(localStorage.getItem('vlt-temp-images') || '{}');
+      const subjectImages = localImages[currentItem] || [];
+      const canAdd = subjectImages.length < 3;
+      setCanAddMore(canAdd);
     }
   };
 
@@ -60,7 +82,9 @@ export default function ReferencePhase({
   };
 
   const handleImageAdded = () => {
-    checkCanAddMore();
+    // Force PersonalImageBoard to remount and reload images
+    setRefreshKey(prev => prev + 1);
+    // Don't immediately check canAddMore - let the imageCount update trigger it
   };
 
   const referenceProgress = targetReferenceDuration > 0 ? Math.min((referenceTimer / targetReferenceDuration) * 100, 100) : 0;
@@ -223,20 +247,22 @@ export default function ReferencePhase({
       ) : null}
 
       {/* Personal Image Collection */}
-      {user && currentItem && (
+      {currentItem && (
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Your Personal Collection</h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  {subscriptionTier === 'free' && imageCount >= 3
+                  {!user
+                    ? `Sign in to start building your reference library for "${currentItem}"`
+                    : subscriptionTier === 'free' && imageCount >= 3
                     ? `Free tier: ${imageCount}/3 images saved`
                     : `Saved references for "${currentItem}"`
                   }
                 </p>
               </div>
-              {subscriptionTier === 'free' && imageCount >= 3 && (
+              {user && subscriptionTier === 'free' && imageCount >= 3 && (
                 <button
                   onClick={handleUpgradeNeeded}
                   className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
@@ -248,16 +274,38 @@ export default function ReferencePhase({
           </div>
 
           <div className="p-6 space-y-4">
-            <PersonalImageBoard
-              drawingSubject={currentItem}
-              onImageCountChange={setImageCount}
-            />
-            <ImageUrlInput
-              drawingSubject={currentItem}
-              onImageAdded={handleImageAdded}
-              canAddMore={canAddMore}
-              onUpgradeNeeded={handleUpgradeNeeded}
-            />
+            {user ? (
+              <>
+                <PersonalImageBoard
+                  key={refreshKey}
+                  drawingSubject={currentItem}
+                  onImageCountChange={setImageCount}
+                />
+                <ImageUrlInput
+                  drawingSubject={currentItem}
+                  onImageAdded={handleImageAdded}
+                  canAddMore={canAddMore}
+                  onUpgradeNeeded={handleUpgradeNeeded}
+                  onSignInNeeded={() => onShowAuth?.('signin')}
+                />
+              </>
+            ) : (
+              <>
+                {/* Show same layout for non-signed in users */}
+                <PersonalImageBoard
+                  key={refreshKey}
+                  drawingSubject={currentItem}
+                  onImageCountChange={setImageCount}
+                />
+                <ImageUrlInput
+                  drawingSubject={currentItem}
+                  onImageAdded={handleImageAdded}
+                  canAddMore={false} // Will trigger sign in flow
+                  onUpgradeNeeded={handleUpgradeNeeded}
+                  onSignInNeeded={() => onShowAuth?.('signin')}
+                />
+              </>
+            )}
           </div>
         </div>
       )}

@@ -28,6 +28,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'pro'>('free')
 
   useEffect(() => {
+    // Clean stale auth tokens from URL before processing session
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+      // Check if tokens are stale (older than 2 minutes)
+      const hash = window.location.hash
+      const params = new URLSearchParams(hash.substring(1))
+      const expiresAt = params.get('expires_at')
+
+      if (expiresAt) {
+        const expiryTime = parseInt(expiresAt) * 1000
+        const now = Date.now()
+        const timeUntilExpiry = expiryTime - now
+
+        // If tokens expire in less than 2 minutes, they're likely stale
+        if (timeUntilExpiry < 120000) {
+          console.log('Cleaning stale auth tokens from URL')
+          window.history.replaceState({}, '', window.location.pathname)
+        }
+      }
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
@@ -126,7 +146,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Error signing out:', error)
+      }
+      // Don't reload here - let the auth state change handle the UI updates
+    } catch (error) {
+      console.error('Unexpected error during sign out:', error)
+    }
   }
 
   const value = {

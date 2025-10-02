@@ -66,7 +66,10 @@ export default function Header({
                 )}
               </div>
               <button
-                onClick={signOut}
+                onClick={async () => {
+                  await signOut()
+                  onNavigateHome?.()
+                }}
                 className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-3 rounded-lg transition-colors inline-flex items-center gap-2"
               >
                 <LogOut size={16} />

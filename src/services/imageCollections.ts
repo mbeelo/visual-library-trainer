@@ -102,14 +102,28 @@ export class ImageCollectionService {
       return true
     }
 
-    // Free tier: max 3 images per subject
-    const { count } = await supabase
-      .from('image_collections')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('drawing_subject', drawingSubject)
+    try {
+      // Add a 3-second timeout to the database query
+      const queryPromise = supabase
+        .from('image_collections')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('drawing_subject', drawingSubject);
 
-    return (count || 0) < 3
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Database query timeout')), 3000)
+      );
+
+      const { count, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+
+      if (error) {
+        throw error;
+      }
+
+      return (count || 0) < 3;
+    } catch (error) {
+      throw error;
+    }
   }
 
   // Get total image count for user (for analytics)

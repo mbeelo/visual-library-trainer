@@ -13,3 +13,5 @@ export { ImageUrlInput } from './ImageUrlInput';
 export { PersonalImageBoard } from './PersonalImageBoard';
 export { UpgradeModal } from './UpgradeModal';
 export { MigrationPrompt } from './MigrationPrompt';
+export { Layout } from './Layout';
+export { ProtectedRoute } from './ProtectedRoute';

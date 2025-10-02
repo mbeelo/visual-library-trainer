@@ -6,9 +6,10 @@ interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
   mode: 'signin' | 'signup'
+  onModeChange: (mode: 'signin' | 'signup') => void
 }
 
-export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, mode, onModeChange }: AuthModalProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -69,12 +70,12 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
 
         <div className="mb-6">
           <h2 className="text-2xl font-bold mb-2">
-            {mode === 'signin' ? 'Welcome back!' : 'Create your account'}
+            {mode === 'signin' ? 'Save Your Reference Images' : 'Start Building Your Library'}
           </h2>
           <p className="text-gray-600">
             {mode === 'signin'
-              ? 'Sign in to access your personal image collections'
-              : 'Start building your personal reference library'
+              ? 'Sign in to save images and build your personal visual library'
+              : 'Create your account to save unlimited reference images'
             }
           </p>
         </div>
@@ -160,7 +161,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
             <span className="text-gray-600">
               Don't have an account?{' '}
               <button
-                onClick={() => window.location.href = '?auth=signup'}
+                onClick={() => onModeChange('signup')}
                 className="text-blue-600 hover:underline"
               >
                 Sign up
@@ -170,7 +171,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
             <span className="text-gray-600">
               Already have an account?{' '}
               <button
-                onClick={() => window.location.href = '?auth=signin'}
+                onClick={() => onModeChange('signin')}
                 className="text-blue-600 hover:underline"
               >
                 Sign in
