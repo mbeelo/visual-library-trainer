@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Trash2, ExternalLink, StickyNote, ImageIcon } from 'lucide-react'
-import { ImageCollection } from '../types'
-import { ImageCollectionService } from '../services/imageCollections'
+import { BoardImage } from '../services/boardService'
+import { BoardService } from '../services/boardService'
 import { useAuth } from '../contexts/AuthContext'
 
 interface PersonalImageBoardProps {
@@ -13,7 +13,7 @@ export function PersonalImageBoard({
   drawingSubject,
   onImageCountChange
 }: PersonalImageBoardProps) {
-  const [images, setImages] = useState<ImageCollection[]>([])
+  const [images, setImages] = useState<BoardImage[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [imageLoadStates, setImageLoadStates] = useState<Record<string, 'loading' | 'loaded' | 'error'>>({})
@@ -36,24 +36,9 @@ export function PersonalImageBoard({
     try {
       setLoading(true)
 
-      // Try database first
-      let data: ImageCollection[] = []
-      try {
-        data = await ImageCollectionService.getImagesBySubject(user.id, drawingSubject)
-        console.log('📸 Loaded images from database:', data)
-      } catch (dbError) {
-        console.log('Database not ready, loading from localStorage')
-
-        // Fallback to localStorage
-        const localImages = JSON.parse(localStorage.getItem('vlt-temp-images') || '{}')
-        const subjectImages = localImages[drawingSubject] || []
-        data = subjectImages.map((img: any) => ({
-          ...img,
-          user_id: user.id,
-          drawing_subject: drawingSubject,
-          position: 0
-        }))
-      }
+      // Load images from new board system
+      const data = await BoardService.getBoardImages(user.id, drawingSubject)
+      console.log('📸 Loaded images from board:', data)
 
       setImages(data)
       onImageCountChange(data.length)
@@ -71,7 +56,10 @@ export function PersonalImageBoard({
         return newStates
       })
     } catch (error) {
-      console.error('Error loading images:', error)
+      console.error('Error loading board images:', error)
+      // On error, set empty array to show empty state
+      setImages([])
+      onImageCountChange(0)
     } finally {
       setLoading(false)
     }
@@ -82,18 +70,7 @@ export function PersonalImageBoard({
 
     setDeletingId(imageId)
     try {
-      try {
-        await ImageCollectionService.removeImage(user.id, imageId)
-      } catch (dbError) {
-        console.log('Database not ready, removing from localStorage')
-
-        // Fallback: remove from localStorage
-        const localImages = JSON.parse(localStorage.getItem('vlt-temp-images') || '{}')
-        if (localImages[drawingSubject]) {
-          localImages[drawingSubject] = localImages[drawingSubject].filter((img: any) => img.id !== imageId)
-          localStorage.setItem('vlt-temp-images', JSON.stringify(localImages))
-        }
-      }
+      await BoardService.removeImageFromBoard(user.id, imageId)
 
       setImages(prev => prev.filter(img => img.id !== imageId))
       setImageLoadStates(prev => {
@@ -103,7 +80,7 @@ export function PersonalImageBoard({
       })
       onImageCountChange(images.length - 1)
     } catch (error) {
-      console.error('Error deleting image:', error)
+      console.error('Error deleting image from board:', error)
     } finally {
       setDeletingId(null)
     }

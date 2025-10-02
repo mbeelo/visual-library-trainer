@@ -4,7 +4,7 @@ import { Timer, BookOpen, ExternalLink, Star, Smile, ThumbsUp, Frown, X, Play, P
 import { PersonalImageBoard } from './PersonalImageBoard';
 import { ImageUrlInput } from './ImageUrlInput';
 import { useAuth } from '../contexts/AuthContext';
-import { ImageCollectionService } from '../services/imageCollections';
+import { BoardService } from '../services/boardService';
 import { useState, useEffect } from 'react';
 
 interface ReferencePhaseProps {
@@ -60,20 +60,16 @@ export default function ReferencePhase({
 
     // Fallback: query database
     try {
-      const allowed = await ImageCollectionService.canAddImage(
+      const allowed = await BoardService.canAddImageToBoard(
         user.id,
         currentItem,
         subscriptionTier
       );
       setCanAddMore(allowed);
     } catch (error) {
-      console.log('Database not ready, checking localStorage for image limit');
-
-      // Fallback: check localStorage for free tier limit
-      const localImages = JSON.parse(localStorage.getItem('vlt-temp-images') || '{}');
-      const subjectImages = localImages[currentItem] || [];
-      const canAdd = subjectImages.length < 3;
-      setCanAddMore(canAdd);
+      console.log('Error checking board image limit:', error);
+      // On error, allow for better UX (user will get error when actually trying to add)
+      setCanAddMore(true);
     }
   };
 

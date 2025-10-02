@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Plus, X, AlertCircle, Loader2, CheckCircle, ExternalLink, Copy, Info } from 'lucide-react'
-import { ImageCollectionService } from '../services/imageCollections'
+import { BoardService } from '../services/boardService'
 import { useAuth } from '../contexts/AuthContext'
 
 interface ImageUrlInputProps {
@@ -122,7 +122,7 @@ export function ImageUrlInput({
 
     // Enhanced URL validation and preview
     if (newUrl.trim()) {
-      if (ImageCollectionService.validateImageUrl(newUrl)) {
+      if (BoardService.validateImageUrl(newUrl)) {
         setPreviewUrl(newUrl)
       } else {
         setPreviewUrl(null)
@@ -157,7 +157,7 @@ export function ImageUrlInput({
       return
     }
 
-    if (!ImageCollectionService.validateImageUrl(url)) {
+    if (!BoardService.validateImageUrl(url)) {
       setError('Please enter a valid image URL')
       return
     }
@@ -166,10 +166,10 @@ export function ImageUrlInput({
     setError('')
 
     try {
-      await ImageCollectionService.addImage(user.id, {
-        drawing_subject: drawingSubject,
+      await BoardService.addImageToBoard(user.id, drawingSubject, {
         image_url: url.trim(),
-        notes: notes.trim() || undefined
+        notes: notes.trim() || undefined,
+        title: drawingSubject
       })
 
       // Reset form
@@ -179,27 +179,20 @@ export function ImageUrlInput({
       setIsOpen(false)
       onImageAdded()
     } catch (err) {
-      console.error('Database not ready, saving locally for now:', err)
+      console.error('Error adding image to board:', err)
 
-      // Fallback: save to localStorage temporarily
-      const localImages = JSON.parse(localStorage.getItem('vlt-temp-images') || '{}')
-      if (!localImages[drawingSubject]) {
-        localImages[drawingSubject] = []
+      // Show user-friendly error message
+      if (err instanceof Error) {
+        if (err.message.includes('already in your board')) {
+          setError('This image is already in your collection')
+        } else if (err.message.includes('timeout')) {
+          setError('Request timed out. Please try again.')
+        } else {
+          setError('Unable to save image. Please try again.')
+        }
+      } else {
+        setError('Unable to save image. Please try again.')
       }
-      localImages[drawingSubject].push({
-        id: Date.now().toString(),
-        image_url: url.trim(),
-        notes: notes.trim() || undefined,
-        created_at: new Date().toISOString()
-      })
-      localStorage.setItem('vlt-temp-images', JSON.stringify(localImages))
-
-      // Reset form and show success
-      setUrl('')
-      setNotes('')
-      setPreviewUrl(null)
-      setIsOpen(false)
-      onImageAdded()
     } finally {
       setIsLoading(false)
     }
