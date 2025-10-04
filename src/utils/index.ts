@@ -7,3 +7,4 @@ export {
   createCustomList,
   validateCustomListData
 } from './listManagement.js';
+export { generateNextChallenge } from './challengeGeneration.js';

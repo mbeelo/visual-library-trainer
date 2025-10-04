@@ -4,10 +4,11 @@ import SessionSetup from '../components/SessionSetup'
 import DrawingPhase from '../components/DrawingPhase'
 import ReferencePhase from '../components/ReferencePhase'
 import CompletePhase from '../components/CompletePhase'
-import { timerPresets } from '../data'
+import { timerPresets, defaultList, communityLists, trainingAlgorithms } from '../data'
 import { useLocalStorage } from '../hooks'
-import { HistoryEntry, ItemRatings, Rating, TimerPreset } from '../types'
+import { HistoryEntry, ItemRatings, Rating, TimerPreset, TrainingList } from '../types'
 import { useModal } from '../contexts/ModalContext'
+import { generateNextChallenge } from '../utils/challengeGeneration'
 
 export function PracticePage() {
   const { subject } = useParams<{ subject: string }>()
@@ -28,12 +29,20 @@ export function PracticePage() {
   const [isReferenceTimerRunning, setIsReferenceTimerRunning] = useState(false)
 
   // Persisted state
-  const [, setHistory] = useLocalStorage<HistoryEntry[]>('vlt-history', [])
-  const [, setItemRatings] = useLocalStorage<ItemRatings>('vlt-ratings', {})
+  const [history, setHistory] = useLocalStorage<HistoryEntry[]>('vlt-history', [])
+  const [itemRatings, setItemRatings] = useLocalStorage<ItemRatings>('vlt-ratings', {})
+  const [customLists] = useLocalStorage<TrainingList[]>('vlt-custom-lists', [])
   const [settings] = useLocalStorage('vlt-settings', {
     defaultTimerDuration: 300,
-    soundEnabled: true
+    soundEnabled: true,
+    algorithmMode: true,
+    activeListId: defaultList.id,
+    selectedAlgorithm: 'balanced'
   })
+
+  // Get active training list
+  const allLists = [defaultList, ...communityLists, ...customLists]
+  const activeList = allLists.find(list => list.id === settings.activeListId) || defaultList
 
   const [selectedTimerPreset, setSelectedTimerPreset] = useState<TimerPreset>(
     () => timerPresets.find(p => p.duration === settings.defaultTimerDuration) || timerPresets[3]
@@ -62,7 +71,7 @@ export function PracticePage() {
   const updatePhase = (newPhase: string) => {
     const params = new URLSearchParams(searchParams)
     params.set('phase', newPhase)
-    navigate(`/practice/${subject}?${params.toString()}`, { replace: true })
+    navigate(`/app/practice/${subject}?${params.toString()}`, { replace: true })
   }
 
   const startSession = () => {
@@ -117,12 +126,34 @@ export function PracticePage() {
     setIsReferenceTimerRunning(false)
   }
 
+  const generateChallenge = () => {
+    try {
+      const challenge = generateNextChallenge(
+        activeList,
+        {
+          algorithmMode: settings.algorithmMode,
+          selectedAlgorithm: settings.selectedAlgorithm
+        },
+        itemRatings,
+        history,
+        trainingAlgorithms
+      )
+
+      // Navigate to the new challenge
+      navigate(`/app/practice/${encodeURIComponent(challenge.item)}?category=${encodeURIComponent(challenge.category)}`)
+    } catch (error) {
+      console.error('Error generating challenge:', error)
+      // Fallback to dashboard
+      navigate('/app/dashboard')
+    }
+  }
+
   if (!currentItem || !currentCategory) {
     return (
       <div className="text-center py-12">
         <h1 className="text-2xl font-semibold text-gray-900 mb-4">Subject not found</h1>
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/app/dashboard')}
           className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
         >
           Back to Dashboard
@@ -140,7 +171,7 @@ export function PracticePage() {
           selectedPreset={selectedTimerPreset}
           onPresetChange={setSelectedTimerPreset}
           onStartSession={startSession}
-          onBack={() => navigate('/dashboard')}
+          onBack={() => navigate('/app/dashboard')}
         />
       )}
 
@@ -174,8 +205,8 @@ export function PracticePage() {
         <CompletePhase
           currentItem={currentItem}
           timer={timer}
-          onGenerateChallenge={() => navigate('/dashboard')}
-          onBackToDashboard={() => navigate('/dashboard')}
+          onGenerateChallenge={generateChallenge}
+          onBackToDashboard={() => navigate('/app/dashboard')}
           onPracticeSameSubject={practiceSameSubject}
         />
       )}

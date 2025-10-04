@@ -1,6 +1,7 @@
 export interface TrainingList {
   id: string;
   name: string;
+  description?: string;
   creator: string;
   categories: Record<string, string[]>;
   createdAt?: Date;
@@ -53,6 +54,7 @@ export interface AppSettings {
 
 export interface CustomListData {
   name: string;
+  description?: string;
   creator: string;
   socialLink?: string;
   rawItems: string;

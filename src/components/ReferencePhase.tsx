@@ -61,7 +61,6 @@ export default function ReferencePhase({
     // Fallback: query database
     try {
       const allowed = await BoardService.canAddImageToBoard(
-        user.id,
         currentItem,
         subscriptionTier
       );

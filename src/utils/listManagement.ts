@@ -48,6 +48,7 @@ export function createCustomList(data: CustomListData): TrainingList {
   return {
     id: generateListId(),
     name: data.name,
+    description: data.description,
     creator: data.creator,
     categories,
     createdAt: new Date(),

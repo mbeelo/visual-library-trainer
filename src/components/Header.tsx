@@ -1,4 +1,5 @@
-import { Users, Plus, LogOut } from 'lucide-react';
+import { Users, Plus, LogOut, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { TrainingList } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -6,10 +7,6 @@ interface HeaderProps {
   activeList: TrainingList;
   allLists: TrainingList[];
   onSetActiveList: (list: TrainingList) => void;
-  showListBrowser: boolean;
-  setShowListBrowser: (show: boolean) => void;
-  showListCreator: boolean;
-  setShowListCreator: (show: boolean) => void;
   onNavigateHome?: () => void;
   onShowAuth?: (mode: 'signin' | 'signup') => void;
 }
@@ -18,22 +15,24 @@ export default function Header({
   activeList,
   allLists,
   onSetActiveList,
-  showListBrowser,
-  setShowListBrowser,
-  showListCreator,
-  setShowListCreator,
   onNavigateHome,
   onShowAuth
 }: HeaderProps) {
+  const navigate = useNavigate();
   const { user, signOut, subscriptionTier } = useAuth();
   return (
     <header className="mb-8">
       <div className="flex justify-between items-center mb-4">
         <button
           onClick={onNavigateHome}
-          className="text-3xl font-semibold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
+          className="flex items-center space-x-2 hover:opacity-80 transition-opacity cursor-pointer"
         >
-          Visual Library Trainer
+          <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-amber-500 rounded-lg flex items-center justify-center">
+            <Eye className="w-5 h-5 text-slate-900" />
+          </div>
+          <span className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
+            AfterImage
+          </span>
         </button>
         <div className="flex gap-3 items-center">
           {!user && onShowAuth && (
@@ -46,7 +45,7 @@ export default function Header({
               </button>
               <button
                 onClick={() => onShowAuth('signup')}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                className="bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-slate-900 font-semibold py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105"
               >
                 Sign Up
               </button>
@@ -60,7 +59,7 @@ export default function Header({
                   {user.email}
                 </span>
                 {subscriptionTier === 'pro' && (
-                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                  <span className="bg-gradient-to-r from-orange-100 to-amber-100 text-orange-800 px-2 py-1 rounded-full text-xs font-medium border border-orange-200">
                     Pro
                   </span>
                 )}
@@ -79,15 +78,15 @@ export default function Header({
           )}
 
           <button
-            onClick={() => setShowListBrowser(!showListBrowser)}
+            onClick={() => navigate('/app/browse-lists')}
             className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors inline-flex items-center gap-2"
           >
             <Users size={20} />
             Browse Lists
           </button>
           <button
-            onClick={() => setShowListCreator(!showListCreator)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors inline-flex items-center gap-2"
+            onClick={() => navigate('/app/create-list')}
+            className="bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-slate-900 font-semibold py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center gap-2"
           >
             <Plus size={20} />
             Create List

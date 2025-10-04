@@ -166,7 +166,7 @@ export function ImageUrlInput({
     setError('')
 
     try {
-      await BoardService.addImageToBoard(user.id, drawingSubject, {
+      await BoardService.addImageToBoard(drawingSubject, {
         image_url: url.trim(),
         notes: notes.trim() || undefined,
         title: drawingSubject

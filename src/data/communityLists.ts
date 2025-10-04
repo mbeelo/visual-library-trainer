@@ -4,6 +4,7 @@ export const communityLists: TrainingList[] = [
   {
     id: 'anatomy-essentials',
     name: 'Human Anatomy Essentials',
+    description: 'Master the fundamentals of human anatomy with this focused collection of body parts and proportions. Perfect for figure drawing, character design, and realistic portraits.',
     creator: '@artbyjenna',
     isCustom: true,
     categories: {
@@ -16,6 +17,7 @@ export const communityLists: TrainingList[] = [
   {
     id: 'vehicles-fundamentals',
     name: 'Vehicle Design Fundamentals',
+    description: 'Build your mechanical drawing skills with this comprehensive collection of vehicles. Great for concept artists, industrial designers, and anyone wanting to master hard surface drawing.',
     creator: '@conceptcarl',
     isCustom: true,
     categories: {
@@ -28,6 +30,7 @@ export const communityLists: TrainingList[] = [
   {
     id: 'nature-forms',
     name: 'Natural Forms & Textures',
+    description: 'Explore the organic beauty of nature with this collection focused on natural forms, textures, and landscapes. Perfect for environmental artists, botanical illustrators, and plein air enthusiasts.',
     creator: '@wildsketchbook',
     isCustom: true,
     categories: {

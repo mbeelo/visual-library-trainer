@@ -1,5 +1,29 @@
 import { supabase } from '../lib/supabase'
 
+// Utility function for retrying failed operations
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  delay: number = 1000
+): Promise<T> {
+  let lastError: any
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation()
+    } catch (error: any) {
+      lastError = error
+      console.warn(`Attempt ${attempt} failed:`, error.message)
+
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, delay * attempt))
+      }
+    }
+  }
+
+  throw lastError
+}
+
 export interface SubjectBoard {
   id: string
   user_id: string
@@ -38,45 +62,53 @@ export interface BoardImageInput {
 
 export class BoardService {
   // Get or create a board for a specific subject
-  static async getOrCreateSubjectBoard(userId: string, subject: string): Promise<SubjectBoard> {
-    // First try to get existing board
-    const { data: existingBoard, error: fetchError } = await supabase
-      .from('subject_boards')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('subject_name', subject)
-      .single()
+  static async getOrCreateSubjectBoard(subject: string): Promise<SubjectBoard> {
+    return withRetry(async () => {
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        throw new Error('User not authenticated')
+      }
 
-    if (existingBoard && !fetchError) {
-      return existingBoard
-    }
+      // First try to get existing board
+      const { data: existingBoard, error: fetchError } = await supabase
+        .from('subject_boards')
+        .select('*')
+        .eq('subject_name', subject)
+        .single()
 
-    // Create new board if it doesn't exist
-    const { data, error } = await supabase
-      .from('subject_boards')
-      .insert([{
-        user_id: userId,
-        subject_name: subject,
-        board_name: subject,
-        is_private: true
-      }])
-      .select()
-      .single()
+      if (existingBoard && !fetchError) {
+        return existingBoard
+      }
 
-    if (error) {
-      console.error('Error creating subject board:', error)
-      throw error
-    }
+      // Create new board if it doesn't exist
+      const { data, error } = await supabase
+        .from('subject_boards')
+        .insert([{
+          user_id: user.id,
+          subject_name: subject,
+          board_name: subject,
+          is_private: true
+        }])
+        .select()
+        .single()
 
-    return data
+      if (error) {
+        console.error('Error creating subject board:', error)
+        throw error
+      }
+
+      return data
+    })
   }
 
   // Get all images for a specific subject board
-  static async getBoardImages(userId: string, subject: string): Promise<BoardImage[]> {
-    // First get the board
-    const board = await this.getOrCreateSubjectBoard(userId, subject)
+  static async getBoardImages(subject: string): Promise<BoardImage[]> {
+    return withRetry(async () => {
+      // First get the board
+      const board = await this.getOrCreateSubjectBoard(subject)
 
-    const { data, error } = await supabase
+      const { data, error } = await supabase
       .from('board_images')
       .select('*')
       .eq('board_id', board.id)
@@ -91,7 +123,7 @@ export class BoardService {
     if ((!data || data.length === 0)) {
       try {
         console.log('No images found in board system, checking for legacy data...')
-        await this.migrateLegacyDataForUser(userId, subject)
+        await this.migrateLegacyDataForUser(subject)
 
         // Re-fetch after potential migration
         const { data: newData, error: newError } = await supabase
@@ -112,11 +144,19 @@ export class BoardService {
       }
     }
 
-    return data || []
+      return data || []
+    })
   }
 
   // Helper function to migrate legacy data for a specific user/subject
-  private static async migrateLegacyDataForUser(userId: string, subject: string): Promise<void> {
+  private static async migrateLegacyDataForUser(subject: string): Promise<void> {
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      throw new Error('User not authenticated')
+    }
+
+    const userId = user.id
     // Check if there's data in the old image_collections table for this user/subject
     const { data: legacyData, error: legacyError } = await supabase
       .from('image_collections')
@@ -131,7 +171,7 @@ export class BoardService {
     console.log(`Found ${legacyData.length} legacy images for ${subject}, migrating...`)
 
     // Get the board for this subject
-    const board = await this.getOrCreateSubjectBoard(userId, subject)
+    const board = await this.getOrCreateSubjectBoard(subject)
 
     // Migrate each legacy image
     for (const legacyImage of legacyData) {
@@ -169,13 +209,12 @@ export class BoardService {
 
   // Add image to subject board
   static async addImageToBoard(
-    userId: string,
     subject: string,
     imageInput: BoardImageInput
   ): Promise<BoardImage> {
     try {
       // Get or create the board
-      const board = await this.getOrCreateSubjectBoard(userId, subject)
+      const board = await this.getOrCreateSubjectBoard(subject)
 
       // Get next position
       const { data: existingImages } = await supabase
@@ -237,17 +276,19 @@ export class BoardService {
   }
 
   // Remove image from board
-  static async removeImageFromBoard(userId: string, imageId: string): Promise<void> {
-    // Verify ownership through board
+  static async removeImageFromBoard(imageId: string): Promise<void> {
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      throw new Error('User not authenticated')
+    }
+
+    // Get board_id before deleting
     const { data: imageData } = await supabase
       .from('board_images')
-      .select('board_id, subject_boards!inner(user_id)')
+      .select('board_id')
       .eq('id', imageId)
       .single()
-
-    if (!imageData || (imageData as any).subject_boards.user_id !== userId) {
-      throw new Error('Unauthorized to delete this image')
-    }
 
     const { error } = await supabase
       .from('board_images')
@@ -259,25 +300,29 @@ export class BoardService {
       throw error
     }
 
-    // Update board timestamp
-    await supabase
-      .from('subject_boards')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', imageData.board_id)
+    // Update board timestamp if we have the board_id
+    if (imageData?.board_id) {
+      await supabase
+        .from('subject_boards')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', imageData.board_id)
+    }
   }
 
   // Update image notes
-  static async updateImageNotes(userId: string, imageId: string, notes: string): Promise<void> {
-    // Verify ownership through board
+  static async updateImageNotes(imageId: string, notes: string): Promise<void> {
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      throw new Error('User not authenticated')
+    }
+
+    // Get image data for board_id
     const { data: imageData } = await supabase
       .from('board_images')
-      .select('board_id, subject_boards!inner(user_id)')
+      .select('board_id')
       .eq('id', imageId)
       .single()
-
-    if (!imageData || (imageData as any).subject_boards.user_id !== userId) {
-      throw new Error('Unauthorized to update this image')
-    }
 
     const { error } = await supabase
       .from('board_images')
@@ -289,20 +334,21 @@ export class BoardService {
       throw error
     }
 
-    // Update board timestamp
-    await supabase
-      .from('subject_boards')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', imageData.board_id)
+    // Update board timestamp if we have the board_id
+    if (imageData?.board_id) {
+      await supabase
+        .from('subject_boards')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', imageData.board_id)
+    }
   }
 
   // Reorder images in board
   static async reorderBoardImages(
-    userId: string,
     subject: string,
     imageOrders: { image_id: string; position: number }[]
   ): Promise<void> {
-    const board = await this.getOrCreateSubjectBoard(userId, subject)
+    const board = await this.getOrCreateSubjectBoard(subject)
 
     // Use the SQL function we created in the migration
     const { error } = await supabase.rpc('reorder_subject_board_images', {
@@ -318,7 +364,6 @@ export class BoardService {
 
   // Check if user can add more images (free tier limit)
   static async canAddImageToBoard(
-    userId: string,
     subject: string,
     subscriptionTier: 'free' | 'pro'
   ): Promise<boolean> {
@@ -327,7 +372,7 @@ export class BoardService {
     }
 
     try {
-      const board = await this.getOrCreateSubjectBoard(userId, subject)
+      const board = await this.getOrCreateSubjectBoard(subject)
 
       const { count, error } = await supabase
         .from('board_images')
@@ -362,11 +407,11 @@ export class BoardService {
   }
 
   // Get board stats
-  static async getBoardStats(userId: string, subject: string): Promise<{
+  static async getBoardStats(subject: string): Promise<{
     imageCount: number
     lastActivity: string | null
   }> {
-    const board = await this.getOrCreateSubjectBoard(userId, subject)
+    const board = await this.getOrCreateSubjectBoard(subject)
 
     const { data, error } = await supabase
       .from('board_images')

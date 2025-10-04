@@ -1,4 +1,5 @@
 import { Outlet, useNavigate } from 'react-router-dom'
+import { Eye } from 'lucide-react'
 import Header from './Header'
 import { defaultList, communityLists } from '../data'
 import { useLocalStorage } from '../hooks'
@@ -7,8 +8,6 @@ import { useState } from 'react'
 import Toast from './Toast'
 import { AuthModal } from './AuthModal'
 import { UpgradeModal } from './UpgradeModal'
-import ListBrowser from './ListBrowser'
-import ListCreator from './ListCreator'
 import { ModalProvider } from '../contexts/ModalContext'
 
 export function Layout() {
@@ -18,8 +17,6 @@ export function Layout() {
     activeListId: defaultList.id
   })
 
-  const [showListBrowser, setShowListBrowser] = useState(false)
-  const [showListCreator, setShowListCreator] = useState(false)
   const [authModal, setAuthModal] = useState<{
     isOpen: boolean
     mode: 'signin' | 'signup'
@@ -41,7 +38,6 @@ export function Layout() {
   const setActiveList = (list: TrainingList) => {
     setSettings(prev => ({ ...prev, activeListId: list.id }))
     showToast(`Switched to "${list.name}"`, 'success')
-    setShowListBrowser(false)
   }
 
   const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'success') => {
@@ -59,11 +55,7 @@ export function Layout() {
           activeList={activeList}
           allLists={allLists}
           onSetActiveList={setActiveList}
-          showListBrowser={showListBrowser}
-          setShowListBrowser={setShowListBrowser}
-          showListCreator={showListCreator}
-          setShowListCreator={setShowListCreator}
-          onNavigateHome={() => navigate('/dashboard')}
+          onNavigateHome={() => navigate('/app/dashboard')}
           onShowAuth={(mode: 'signin' | 'signup') => setAuthModal({ isOpen: true, mode })}
         />
 
@@ -96,37 +88,18 @@ export function Layout() {
           onClose={() => setShowUpgradeModal(false)}
         />
 
-        {showListBrowser && (
-          <ListBrowser
-            isOpen={showListBrowser}
-            onClose={() => setShowListBrowser(false)}
-            allLists={allLists}
-            activeList={activeList}
-            onSetActiveList={setActiveList}
-          />
-        )}
-
-        {showListCreator && (
-          <ListCreator
-            isOpen={showListCreator}
-            onClose={() => setShowListCreator(false)}
-            onListCreated={(newList) => {
-              setActiveList(newList)
-              setShowListCreator(false)
-            }}
-          />
-        )}
 
         <footer className="mt-16 text-center">
-          <div className="text-gray-500 text-sm font-medium">
-            <a
-              href="https://behelo.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-gray-700 transition-colors duration-200"
-            >
-              behelo.com
-            </a>
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <div className="w-6 h-6 bg-gradient-to-br from-orange-400 to-amber-500 rounded-lg flex items-center justify-center">
+              <Eye className="w-4 h-4 text-slate-900" />
+            </div>
+            <span className="text-xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
+              AfterImage
+            </span>
+          </div>
+          <div className="text-gray-500 text-sm">
+            The art of seeing twice
           </div>
         </footer>
       </div>

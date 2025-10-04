@@ -62,7 +62,7 @@ export function PersonalImageBoard({
       setLoading(true)
 
       // Load images from new board system
-      const data = await BoardService.getBoardImages(user.id, drawingSubject)
+      const data = await BoardService.getBoardImages(drawingSubject)
       console.log('📸 Loaded images from board:', data)
 
       setImages(data)
@@ -95,7 +95,7 @@ export function PersonalImageBoard({
 
     setDeletingId(imageId)
     try {
-      await BoardService.removeImageFromBoard(user.id, imageId)
+      await BoardService.removeImageFromBoard(imageId)
 
       setImages(prev => prev.filter(img => img.id !== imageId))
       setImageLoadStates(prev => {

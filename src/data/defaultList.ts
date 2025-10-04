@@ -3,6 +3,7 @@ import { TrainingList } from '../types';
 export const defaultList: TrainingList = {
   id: 'default',
   name: 'Ultimate Visual Library (100 Items)',
+  description: 'A comprehensive collection of essential drawing subjects every artist should master. Covers everything from everyday objects to fantasy creatures, designed to build your visual memory and improve drawing skills across all categories.',
   creator: 'Visual Library Trainer',
   categories: {
     "Everyday Objects & Props": ["Chair", "Table", "Bed", "Bicycle", "Car", "Smartphone", "Backpack", "Sword", "Gun", "Book"],

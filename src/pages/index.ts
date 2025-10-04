@@ -1,3 +1,5 @@
 export { Landing } from './Landing'
 export { DashboardPage } from './DashboardPage'
 export { PracticePage } from './PracticePage'
+export { default as BrowseListsPage } from './BrowseListsPage'
+export { default as CreateListPage } from './CreateListPage'

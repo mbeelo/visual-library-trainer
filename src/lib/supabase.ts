@@ -1,13 +1,32 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL
-const supabaseKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL || 'https://bcdmydwsoxpzhntyiuxf.supabase.co'
+const supabaseKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjZG15ZHdzb3hwemhudHlpdXhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzNzc0NDUsImV4cCI6MjA3NDk1MzQ0NX0.qfvMDPLJjybSTkUzk96JTLS8yz5HhUjNLJ_uGxM280s'
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  db: {
+    schema: 'public',
+  },
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  },
+  global: {
+    headers: {
+      'x-my-custom-header': 'visual-library-trainer',
+    },
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
+})
 
 export type Database = {
   public: {
