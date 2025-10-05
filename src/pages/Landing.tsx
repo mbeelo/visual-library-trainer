@@ -1,260 +1,343 @@
-import { useState, useEffect } from 'react'
-import { ArrowRight, Play, Sparkles, Brain, Eye, Target, ChevronDown } from 'lucide-react'
+import { Target, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export function Landing() {
-  const [isVisible, setIsVisible] = useState(false)
-  const [currentTestimonial, setCurrentTestimonial] = useState(0)
   const navigate = useNavigate()
 
-  useEffect(() => {
-    setIsVisible(true)
-  }, [])
-
-  const testimonials = [
-    {
-      text: "AfterImage transformed how I see and remember. My drawing confidence skyrocketed in weeks.",
-      author: "Sarah Chen",
-      role: "Digital Artist"
-    },
-    {
-      text: "The visual memory training is incredible. I can recall details I never noticed before.",
-      author: "Marcus Williams",
-      role: "Art Student"
-    },
-    {
-      text: "This isn't just practice - it's rewiring how your brain processes visual information.",
-      author: "Dr. Elena Rodriguez",
-      role: "Art Educator"
-    }
-  ]
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
-    }, 4000)
-    return () => clearInterval(timer)
-  }, [])
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-hidden">
-      {/* Navigation */}
-      <nav className="relative z-50 px-6 py-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-amber-500 rounded-lg flex items-center justify-center">
-              <Eye className="w-5 h-5 text-slate-900" />
+    <div className="bg-slate-900 text-white">
+
+      {/* HERO - Above the Fold */}
+      <div className="min-h-screen flex items-center justify-center py-20">
+        <div className="max-w-6xl mx-auto px-6 text-center">
+
+          {/* Brand */}
+          <div className="flex items-center justify-center space-x-3 mb-8">
+            <div className="w-10 h-10 bg-orange-400 rounded-xl flex items-center justify-center">
+              <Eye className="w-6 h-6 text-slate-900" />
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
-              AfterImage
-            </span>
+            <span className="text-4xl font-bold text-orange-400">AfterImage</span>
           </div>
-          <button
-            onClick={() => navigate('/app/dashboard')}
-            className="bg-gradient-to-r from-orange-400 to-amber-500 text-slate-900 px-6 py-3 rounded-full font-semibold hover:shadow-lg hover:shadow-orange-500/25 transition-all duration-300 transform hover:scale-105"
-          >
-            Start Training
-          </button>
-        </div>
-      </nav>
 
-      {/* Hero Section */}
-      <section className="relative px-6 pt-12 pb-24">
-        <div className="max-w-7xl mx-auto">
-          <div className={`text-center transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-            <div className="inline-flex items-center space-x-2 bg-slate-800/50 backdrop-blur-sm border border-orange-500/20 rounded-full px-4 py-2 mb-8">
-              <Sparkles className="w-4 h-4 text-orange-400" />
-              <span className="text-orange-400 text-sm font-medium">Train Your Visual Mind</span>
+          {/* Core Value Prop */}
+          <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-8">
+            Stop copying.
+            <span className="block text-orange-400 animate-pulse [animation-duration:3s]">Start remembering.</span>
+          </h1>
+
+          <p className="text-xl md:text-2xl text-slate-300 max-w-4xl mx-auto mb-12 leading-relaxed">
+            Draw from memory first, then study curated references and build your personal visual library.
+            Train your brain to recall details instead of just copying what you see.
+          </p>
+
+          {/* Main CTA */}
+          <div className="mb-16">
+            <button
+              onClick={() => navigate('/app/dashboard')}
+              className="bg-orange-400 hover:bg-orange-500 text-slate-900 px-12 py-6 rounded-2xl font-bold text-2xl transition-all duration-300 transform hover:scale-105 mx-auto shadow-2xl hover:shadow-orange-500/25 mb-4"
+            >
+              Start Drawing
+            </button>
+            <p className="text-slate-400 text-lg">
+              Free • No signup • Start immediately
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      {/* BELOW THE FOLD - Details for those who need more */}
+      <div className="border-t border-slate-800">
+
+        {/* Approach Transition */}
+        <section className="py-24 px-6">
+          <div className="max-w-4xl mx-auto text-center mb-32">
+            <h2 className="text-4xl font-bold mb-6">The <span className="text-orange-400">AfterImage</span> Approach</h2>
+            <p className="text-xl text-slate-300 leading-relaxed">
+              Traditional art study has you copying while looking at references.
+              We flip that — draw from memory first, then study what you missed.
+            </p>
+          </div>
+
+          {/* SaaS Feature Showcase */}
+          <div className="max-w-7xl mx-auto space-y-32">
+
+            {/* Feature 1: Create/Select Lists - Text Left, Screenshot Right */}
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              <div>
+                <h2 className="text-4xl font-bold mb-6"><span className="text-orange-400">Create</span> or select a training list</h2>
+                <p className="text-xl text-slate-300 mb-8 leading-relaxed">
+                  Choose from curated collections like "Visual Basics" with 30+ subjects,
+                  or create custom lists for exactly what you want to master. Track your progress
+                  as you build visual memory for each category.
+                </p>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center">
+                      <span className="text-slate-900 text-sm font-bold">✓</span>
+                    </div>
+                    <span className="text-slate-300">100+ curated drawing subjects</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center">
+                      <span className="text-slate-900 text-sm font-bold">✓</span>
+                    </div>
+                    <span className="text-slate-300">Create unlimited custom lists</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center">
+                      <span className="text-slate-900 text-sm font-bold">✓</span>
+                    </div>
+                    <span className="text-slate-300">Progress tracking for every subject</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mock List Card Screenshot */}
+              <div className="bg-slate-800 border border-orange-500/20 rounded-xl overflow-hidden shadow-2xl">
+                <div className="p-6 border-b border-orange-500/20">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-bold text-xl text-white mb-2">Visual Basics</h3>
+                      <p className="text-sm text-slate-300">Master the fundamentals of visual memory</p>
+                    </div>
+                    <span className="bg-orange-400 text-slate-900 px-2 py-1 rounded-lg text-xs font-medium">Curated</span>
+                  </div>
+                  <div className="text-xs text-slate-400">Created by AfterImage</div>
+                </div>
+
+                <div className="p-6 bg-slate-700/30">
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-white">30</div>
+                      <div className="text-xs text-slate-300">Subjects</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-green-600">23</div>
+                      <div className="text-xs text-slate-300">Mastered</div>
+                    </div>
+                  </div>
+                  <div className="w-full bg-slate-600 rounded-full h-2 mb-4">
+                    <div className="bg-orange-400 h-2 rounded-full w-1/4"></div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-orange-400 bg-orange-500/20 px-2 py-1 rounded-full">
+                    <Target className="w-3 h-3" />
+                    <span>7 subjects need practice</span>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-slate-800">
+                  <div className="flex gap-3">
+                    <button className="flex-1 px-4 py-3 border border-orange-400 text-orange-400 rounded-lg font-medium">
+                      Explore
+                    </button>
+                    <button className="flex-1 bg-orange-400 text-slate-900 font-semibold py-3 px-4 rounded-lg">
+                      Draw
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <h1 className="text-6xl md:text-8xl font-bold mb-6 leading-tight">
-              The Art of
-              <span className="block bg-gradient-to-r from-orange-400 via-amber-500 to-orange-400 bg-clip-text text-transparent animate-pulse">
-                Seeing Twice
+            {/* Feature 2: Drawing Phase - Text Right, Screenshot Left */}
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              {/* Mock Drawing Phase Screenshot */}
+              <div className="bg-slate-800 border border-orange-500/20 rounded-xl overflow-hidden shadow-2xl">
+                <div className="p-8">
+                  <div className="text-center mb-6">
+                    <div className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium border border-orange-400 text-orange-400 bg-transparent mb-4">
+                      Animals
+                    </div>
+                    <h2 className="text-3xl font-bold text-white mb-2">Draw <span className="text-orange-400">bicycle</span></h2>
+                    <p className="text-slate-300">From memory only - no googling!</p>
+                  </div>
+
+                  <div className="flex justify-center mb-6">
+                    <div className="bg-slate-700 rounded-lg px-4 py-2 flex items-center gap-2">
+                      <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
+                      <span className="text-white font-mono">05:23</span>
+                    </div>
+                  </div>
+
+
+                  <div className="flex gap-3">
+                    <button className="flex-1 bg-slate-700 text-white py-3 px-4 rounded-lg">Done Drawing</button>
+                    <button className="px-4 py-3 border border-slate-600 text-slate-400 rounded-lg">Skip</button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-4xl font-bold mb-6"><span className="text-orange-400">Draw</span> from memory first</h2>
+                <p className="text-xl text-slate-300 mb-8 leading-relaxed">
+                  No cheating, no googling, no references. Just you and a blank canvas with a simple prompt.
+                  This forces your brain to recall what it knows and reveals exactly what you need to study.
+                  The timer is optional - take as long as you need.
+                </p>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center">
+                      <span className="text-slate-900 text-sm font-bold">✓</span>
+                    </div>
+                    <span className="text-slate-300">Random prompts keep you challenged</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center">
+                      <span className="text-slate-900 text-sm font-bold">✓</span>
+                    </div>
+                    <span className="text-slate-300">Optional timer for focused practice</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center">
+                      <span className="text-slate-900 text-sm font-bold">✓</span>
+                    </div>
+                    <span className="text-slate-300">No pressure - draw at your own pace</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Feature 3: Reference Phase - Text Left, Screenshot Right */}
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              <div>
+                <h2 className="text-4xl font-bold mb-6"><span className="text-orange-400">Study</span> references and <span className="text-orange-400">build</span> your visual library</h2>
+                <p className="text-xl text-slate-300 mb-8 leading-relaxed">
+                  Now see what you missed. Study curated references and save any images you find
+                  to your personal collection. Rate your attempt to help our algorithm focus on
+                  what you need to practice most.
+                </p>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center">
+                      <span className="text-slate-900 text-sm font-bold">✓</span>
+                    </div>
+                    <span className="text-slate-300">Curated reference sources</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center">
+                      <span className="text-slate-900 text-sm font-bold">✓</span>
+                    </div>
+                    <span className="text-slate-300">Save images to personal boards</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center">
+                      <span className="text-slate-900 text-sm font-bold">✓</span>
+                    </div>
+                    <span className="text-slate-300">Smart algorithm adapts to your progress</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mock Reference Phase Screenshot */}
+              <div className="bg-slate-800/60 border border-slate-600/50 rounded-xl overflow-hidden shadow-2xl">
+                <div className="p-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-8 h-8 bg-slate-600 rounded-lg flex items-center justify-center">
+                      <span className="text-slate-300">📚</span>
+                    </div>
+                    <div>
+                      <h3 className="text-base font-medium text-slate-200">Your Reference Library</h3>
+                      <p className="text-xs text-slate-400">5 references saved for bicycle</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 mb-6">
+                    <div className="aspect-square bg-slate-700 rounded-lg overflow-hidden">
+                      <img
+                        src="https://i.pinimg.com/736x/4b/d5/dc/4bd5dccf05f33ca56c324a7d25aadbdb.jpg"
+                        alt="Bicycle reference"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="aspect-square bg-slate-700 rounded-lg overflow-hidden">
+                      <img
+                        src="https://i.pinimg.com/1200x/a3/26/7b/a3267bb2a82c9cdf89810954da4a280e.jpg"
+                        alt="Bicycle reference"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="aspect-square bg-slate-700/50 border-2 border-dashed border-slate-600 rounded-lg flex items-center justify-center">
+                      <span className="text-slate-500 text-sm">Add +</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-orange-400 border-2 border-orange-300 rounded-xl p-6">
+                    <h4 className="text-slate-900 font-bold mb-4 text-center">How did your drawing turn out?</h4>
+                    <div className="flex gap-2 justify-center">
+                      <button className="bg-slate-700 text-white px-4 py-2 rounded-lg text-sm">😊 Easy</button>
+                      <button className="bg-slate-700 text-white px-4 py-2 rounded-lg text-sm">👍 Good</button>
+                      <button className="bg-slate-700 text-white px-4 py-2 rounded-lg text-sm">😅 Struggled</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        {/* Final CTA with Social Proof */}
+        <section className="py-24 px-6 bg-slate-800/30">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-5xl font-bold mb-6">Stop depending on references</h2>
+            <p className="text-xl text-slate-300 mb-12">
+              Start building the visual memory that separates good artists from great ones.
+            </p>
+
+            <div className="grid md:grid-cols-3 gap-8 mb-12">
+              <div className="bg-slate-800/50 rounded-xl p-6">
+                <div className="text-3xl font-bold text-orange-400 mb-2">Before</div>
+                <p className="text-slate-300">"I can only draw what I'm looking at"</p>
+              </div>
+              <div className="bg-slate-800/50 rounded-xl p-6">
+                <div className="text-3xl font-bold text-orange-400 mb-2">After</div>
+                <p className="text-slate-300">"I can draw anything I've studied from memory"</p>
+              </div>
+              <div className="bg-slate-800/50 rounded-xl p-6">
+                <div className="text-3xl font-bold text-orange-400 mb-2">Plus</div>
+                <p className="text-slate-300">"I have a personal reference library for everything"</p>
+              </div>
+            </div>
+
+
+            <button
+              onClick={() => navigate('/app/dashboard')}
+              className="bg-orange-400 hover:bg-orange-500 text-slate-900 px-12 py-6 rounded-2xl font-bold text-xl transition-all duration-300 transform hover:scale-105 mx-auto"
+            >
+              Start Drawing
+            </button>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="py-16 px-6 text-center border-t border-slate-800">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <div className="w-6 h-6 bg-gradient-to-br from-orange-400 to-amber-500 rounded-lg flex items-center justify-center">
+                <Eye className="w-4 h-4 text-slate-900" />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
+                AfterImage
               </span>
-            </h1>
-
-            <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Master the art of visual memory. Draw from imagination.
-              Build an <span className="text-orange-400 font-semibold">unshakeable visual library</span> that transforms your artistic ability forever.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-              <button
-                onClick={() => navigate('/app/dashboard')}
-                className="group bg-gradient-to-r from-orange-400 to-amber-500 text-slate-900 px-8 py-4 rounded-full font-bold text-lg hover:shadow-2xl hover:shadow-orange-500/30 transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
-              >
-                <Play className="w-5 h-5" />
-                <span>Start Your Journey</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <span className="text-slate-400 text-sm">Free • No signup required</span>
             </div>
-
-            {/* Floating Elements */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-amber-500/10 rounded-full blur-3xl transform scale-150 animate-pulse"></div>
-              <div className="relative bg-slate-800/30 backdrop-blur-sm border border-orange-500/20 rounded-2xl p-8 max-w-2xl mx-auto">
-                <div className="grid grid-cols-3 gap-6 text-center">
-                  <div>
-                    <div className="text-3xl font-bold text-orange-400">100+</div>
-                    <div className="text-slate-400 text-sm">Drawing Subjects</div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold text-orange-400">∞</div>
-                    <div className="text-slate-400 text-sm">Practice Sessions</div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold text-orange-400">24/7</div>
-                    <div className="text-slate-400 text-sm">Brain Training</div>
-                  </div>
-                </div>
-              </div>
+            <div className="text-orange-400 text-sm mb-4">
+              The art of seeing twice
+            </div>
+            <div className="flex items-center justify-center gap-6 text-slate-400 text-xs">
+              <a href="/app/contact" className="hover:text-orange-400 transition-colors">
+                Contact & Support
+              </a>
+              <a href="/terms" className="hover:text-orange-400 transition-colors">
+                Terms of Service
+              </a>
+              <a href="/privacy" className="hover:text-orange-400 transition-colors">
+                Privacy Policy
+              </a>
             </div>
           </div>
-        </div>
+        </footer>
 
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <ChevronDown className="w-6 h-6 text-orange-400" />
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="px-6 py-24 bg-slate-800/30">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              <span className="text-orange-400">How</span> It Works
-            </h2>
-            <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-              Simple. Powerful. Scientifically designed to build lasting visual memory.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-12">
-            <div className="group text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                <Brain className="w-8 h-8 text-slate-900" />
-              </div>
-              <h3 className="text-2xl font-bold mb-4 text-orange-400">1. Challenge</h3>
-              <p className="text-slate-300 leading-relaxed">
-                Draw a random subject from memory. No references, just your mind's eye and imagination.
-              </p>
-            </div>
-
-            <div className="group text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                <Eye className="w-8 h-8 text-slate-900" />
-              </div>
-              <h3 className="text-2xl font-bold mb-4 text-orange-400">2. Study</h3>
-              <p className="text-slate-300 leading-relaxed">
-                Compare with curated references. See what you missed, what you nailed, and what to focus on.
-              </p>
-            </div>
-
-            <div className="group text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                <Target className="w-8 h-8 text-slate-900" />
-              </div>
-              <h3 className="text-2xl font-bold mb-4 text-orange-400">3. Evolve</h3>
-              <p className="text-slate-300 leading-relaxed">
-                Rate your performance. Our algorithm adapts, ensuring you practice what challenges you most.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="px-6 py-24">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-16">
-            What <span className="text-orange-400">Artists</span> Are Saying
-          </h2>
-
-          <div className="relative h-48 flex items-center justify-center">
-            {testimonials.map((testimonial, index) => (
-              <div
-                key={index}
-                className={`absolute inset-0 transition-all duration-500 ${
-                  index === currentTestimonial
-                    ? 'opacity-100 translate-y-0'
-                    : 'opacity-0 translate-y-4'
-                }`}
-              >
-                <blockquote className="text-2xl md:text-3xl font-light text-slate-200 mb-8 leading-relaxed">
-                  "{testimonial.text}"
-                </blockquote>
-                <div className="text-orange-400 font-semibold">
-                  {testimonial.author}
-                </div>
-                <div className="text-slate-400 text-sm">
-                  {testimonial.role}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-center space-x-2 mt-8">
-            {testimonials.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentTestimonial(index)}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  index === currentTestimonial
-                    ? 'bg-orange-400'
-                    : 'bg-slate-600 hover:bg-slate-500'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="px-6 py-24 bg-gradient-to-r from-orange-500/10 to-amber-500/10">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-            Ready to See
-            <span className="block text-orange-400">Differently?</span>
-          </h2>
-          <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto">
-            Join thousands of artists building unbreakable visual memory.
-            Start your transformation today - completely free.
-          </p>
-
-          <button
-            onClick={() => navigate('/app/dashboard')}
-            className="group bg-gradient-to-r from-orange-400 to-amber-500 text-slate-900 px-12 py-6 rounded-full font-bold text-xl hover:shadow-2xl hover:shadow-orange-500/30 transition-all duration-300 transform hover:scale-105 flex items-center space-x-3 mx-auto"
-          >
-            <Play className="w-6 h-6" />
-            <span>Begin Training Now</span>
-            <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-          </button>
-
-          <p className="text-slate-400 text-sm mt-6">
-            Progress lives in what you almost got right.
-          </p>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="px-6 py-12 bg-slate-900/50 backdrop-blur-sm border-t border-slate-700">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-6 h-6 bg-gradient-to-br from-orange-400 to-amber-500 rounded-lg flex items-center justify-center">
-              <Eye className="w-4 h-4 text-slate-900" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
-              AfterImage
-            </span>
-          </div>
-          <p className="text-slate-400 text-sm">
-            © 2024 AfterImage. The art of seeing twice.
-          </p>
-        </div>
-      </footer>
+      </div>
     </div>
   )
 }

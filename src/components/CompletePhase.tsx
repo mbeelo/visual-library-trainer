@@ -37,9 +37,9 @@ export default function CompletePhase({
         </div>
 
         <div className="p-8 text-center">
-          <div className="inline-flex items-center gap-4 px-8 py-4 bg-blue-50 rounded-full">
-            <Target className="w-6 h-6 text-blue-600" />
-            <span className="text-lg font-semibold text-blue-900">You practiced: {currentItem}</span>
+          <div className="inline-flex items-center gap-4 px-8 py-4 bg-orange-50 rounded-full">
+            <Target className="w-6 h-6 text-orange-600" />
+            <span className="text-lg font-semibold text-orange-900">You practiced: {currentItem}</span>
           </div>
         </div>
       </div>
@@ -47,8 +47,8 @@ export default function CompletePhase({
       {/* Progress Insight */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-            <TrendingUp className="w-5 h-5 text-purple-600" />
+          <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+            <TrendingUp className="w-5 h-5 text-orange-600" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Keep Building Your Skills</h3>
@@ -57,9 +57,9 @@ export default function CompletePhase({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600 mb-1">+1</div>
-            <div className="text-sm text-blue-700 font-medium">Session Completed</div>
+          <div className="text-center p-4 bg-orange-50 rounded-lg">
+            <div className="text-2xl font-bold text-orange-600 mb-1">+1</div>
+            <div className="text-sm text-orange-700 font-medium">Session Completed</div>
           </div>
 
           <div className="text-center p-4 bg-green-50 rounded-lg">
@@ -67,9 +67,9 @@ export default function CompletePhase({
             <div className="text-sm text-green-700 font-medium">Practice Time</div>
           </div>
 
-          <div className="text-center p-4 bg-purple-50 rounded-lg">
-            <div className="text-2xl font-bold text-purple-600 mb-1">📈</div>
-            <div className="text-sm text-purple-700 font-medium">Progress Made</div>
+          <div className="text-center p-4 bg-orange-50 rounded-lg">
+            <div className="text-2xl font-bold text-orange-600 mb-1">📈</div>
+            <div className="text-sm text-orange-700 font-medium">Progress Made</div>
           </div>
         </div>
       </div>
@@ -85,7 +85,7 @@ export default function CompletePhase({
         </button>
         <button
           onClick={onGenerateChallenge}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-4 rounded-lg transition-all shadow-sm hover:shadow-md inline-flex items-center justify-center gap-3"
+          className="bg-orange-400 hover:bg-orange-500 text-slate-900 font-medium px-8 py-4 rounded-lg transition-all shadow-sm hover:shadow-md inline-flex items-center justify-center gap-3"
         >
           <Play className="w-5 h-5" />
           <span className="text-lg">Next Challenge</span>

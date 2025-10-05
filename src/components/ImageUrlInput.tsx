@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Plus, X, AlertCircle, Loader2, CheckCircle, ExternalLink, Copy, Info } from 'lucide-react'
-import { BoardService } from '../services/boardService'
+import { Plus, X, AlertCircle, Loader2, CheckCircle, ExternalLink, Copy } from 'lucide-react'
+import { SimpleImageService } from '../services/simpleImageService'
 import { useAuth } from '../contexts/AuthContext'
 
 interface ImageUrlInputProps {
@@ -95,7 +95,6 @@ export function ImageUrlInput({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [showInstructions, setShowInstructions] = useState(false)
   const [detectedPlatform, setDetectedPlatform] = useState<Platform>(null)
 
   const { user } = useAuth()
@@ -122,7 +121,7 @@ export function ImageUrlInput({
 
     // Enhanced URL validation and preview
     if (newUrl.trim()) {
-      if (BoardService.validateImageUrl(newUrl)) {
+      if (SimpleImageService.validateImageUrl(newUrl)) {
         setPreviewUrl(newUrl)
       } else {
         setPreviewUrl(null)
@@ -157,7 +156,7 @@ export function ImageUrlInput({
       return
     }
 
-    if (!BoardService.validateImageUrl(url)) {
+    if (!SimpleImageService.validateImageUrl(url)) {
       setError('Please enter a valid image URL')
       return
     }
@@ -166,17 +165,25 @@ export function ImageUrlInput({
     setError('')
 
     try {
-      await BoardService.addImageToBoard(drawingSubject, {
-        image_url: url.trim(),
-        notes: notes.trim() || undefined,
-        title: drawingSubject
+      console.log('💾 Attempting to save image:', {
+        drawingSubject,
+        url: url.trim(),
+        notes: notes.trim() || undefined
       })
+
+      const result = await SimpleImageService.addImage(drawingSubject, {
+        image_url: url.trim(),
+        notes: notes.trim() || undefined
+      }, user.id)
+
+      console.log('✅ Image saved successfully:', result)
 
       // Reset form
       setUrl('')
       setNotes('')
       setPreviewUrl(null)
       setIsOpen(false)
+
       onImageAdded()
     } catch (err) {
       console.error('Error adding image to board:', err)
@@ -204,7 +211,6 @@ export function ImageUrlInput({
     setNotes('')
     setPreviewUrl(null)
     setError('')
-    setShowInstructions(false)
     setDetectedPlatform(null)
   }
 
@@ -235,14 +241,14 @@ export function ImageUrlInput({
             }
             setIsOpen(true)
           }}
-          className="w-full bg-white border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50 text-gray-600 hover:text-blue-600 font-medium py-8 px-4 rounded-lg transition-all duration-200 flex flex-col items-center gap-3 group"
+          className="w-full bg-slate-700 border-2 border-dashed border-slate-600 hover:border-orange-400 hover:bg-slate-600 text-slate-300 hover:text-orange-400 font-medium py-8 px-4 rounded-lg transition-all duration-200 flex flex-col items-center gap-3 group"
         >
-          <div className="w-12 h-12 bg-gray-100 group-hover:bg-blue-100 rounded-full flex items-center justify-center transition-colors">
+          <div className="w-12 h-12 bg-slate-600 group-hover:bg-orange-400 rounded-full flex items-center justify-center transition-colors">
             <Plus size={24} className="group-hover:scale-110 transition-transform" />
           </div>
           <div className="space-y-1">
             <span className="text-lg">Add Reference Image</span>
-            <span className="text-sm text-gray-500 block">
+            <span className="text-sm text-slate-400 block">
               From Pinterest, Google Images, ArtStation & more
             </span>
           </div>
@@ -259,72 +265,33 @@ export function ImageUrlInput({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+    <div className="bg-slate-800 border border-slate-600 rounded-lg p-6 shadow-sm">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-              <Plus className="w-5 h-5 text-blue-600" />
+            <div className="w-10 h-10 bg-slate-600 rounded-lg flex items-center justify-center">
+              <Plus className="w-5 h-5 text-orange-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Add Reference Image</h3>
-              <p className="text-sm text-gray-600">For "{drawingSubject}"</p>
+              <h3 className="font-semibold text-white">Add Reference Image</h3>
+              <p className="text-sm text-slate-300">For "{drawingSubject}"</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleCancel}
-            className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+            className="text-slate-400 hover:text-slate-200 p-1 rounded-full hover:bg-slate-700 transition-colors"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Instructions Toggle */}
-        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-center gap-2">
-            <Info className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-900">Need help getting image URLs?</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowInstructions(!showInstructions)}
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
-          >
-            {showInstructions ? 'Hide' : 'Show'} Instructions
-          </button>
-        </div>
-
-        {/* Platform Instructions */}
-        {showInstructions && (
-          <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <h4 className="font-medium text-gray-900 mb-3">How to copy image URLs:</h4>
-            <div className="grid gap-4">
-              {Object.entries(platformGuides).map(([key, guide]) => (
-                <div key={key} className="bg-white p-4 rounded-lg border border-gray-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">{guide.icon}</span>
-                    <span className="font-medium text-gray-900">{guide.name}</span>
-                  </div>
-                  <ol className="text-sm text-gray-600 space-y-1">
-                    {guide.steps.map((step, index) => (
-                      <li key={index} className="flex gap-2">
-                        <span className="font-medium text-gray-400">{index + 1}.</span>
-                        <span>{step}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* URL Input */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-slate-200">
               Image URL
             </label>
             {detectedPlatform && detectedPlatform !== 'other' && (
@@ -341,7 +308,7 @@ export function ImageUrlInput({
               value={url}
               onChange={(e) => handleUrlChange(e.target.value)}
               placeholder="Paste image URL here... (e.g., https://example.com/image.jpg)"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-4 py-3 border border-slate-600 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 text-sm placeholder-slate-400"
               required
             />
             {url && (
@@ -388,7 +355,7 @@ export function ImageUrlInput({
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-slate-200 mb-2">
             Notes (optional)
           </label>
           <input
@@ -396,7 +363,7 @@ export function ImageUrlInput({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g., Great lighting, interesting perspective, good anatomy reference..."
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            className="w-full px-4 py-3 border border-slate-600 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 text-sm placeholder-slate-400"
           />
         </div>
 
@@ -413,7 +380,7 @@ export function ImageUrlInput({
           <button
             type="submit"
             disabled={isLoading || !url || !previewUrl}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
+            className="flex-1 bg-orange-400 hover:bg-orange-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-slate-900 font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
           >
             {isLoading ? (
               <>
@@ -430,7 +397,7 @@ export function ImageUrlInput({
           <button
             type="button"
             onClick={handleCancel}
-            className="px-6 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+            className="px-6 py-3 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors font-medium"
           >
             Cancel
           </button>

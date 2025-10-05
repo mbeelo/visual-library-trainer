@@ -1,6 +1,5 @@
 export { default as Welcome } from './Welcome';
 export { default as Header } from './Header';
-export { default as ListBrowser } from './ListBrowser';
 export { default as ListCreator } from './ListCreator';
 export { default as Dashboard } from './Dashboard';
 export { default as SessionSetup } from './SessionSetup';

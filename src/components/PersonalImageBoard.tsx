@@ -1,23 +1,25 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Trash2, ExternalLink, StickyNote, ImageIcon, X } from 'lucide-react'
-import { BoardImage } from '../services/boardService'
-import { BoardService } from '../services/boardService'
+import { SimpleImage, SimpleImageService } from '../services/simpleImageService'
 import { useAuth } from '../contexts/AuthContext'
 
 interface PersonalImageBoardProps {
   drawingSubject: string
   onImageCountChange: (count: number) => void
+  refreshKey?: number // Add refresh key to force reloading
 }
 
 export function PersonalImageBoard({
   drawingSubject,
-  onImageCountChange
+  onImageCountChange,
+  refreshKey
 }: PersonalImageBoardProps) {
-  const [images, setImages] = useState<BoardImage[]>([])
+  const [images, setImages] = useState<SimpleImage[]>([])
   const [loading, setLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [imageLoadStates, setImageLoadStates] = useState<Record<string, 'loading' | 'loaded' | 'error'>>({})
-  const [expandedImage, setExpandedImage] = useState<BoardImage | null>(null)
+  const [expandedImage, setExpandedImage] = useState<SimpleImage | null>(null)
 
   // Debug log for expanded image state changes
   useEffect(() => {
@@ -28,13 +30,28 @@ export function PersonalImageBoard({
   const { user } = useAuth()
 
   useEffect(() => {
+    console.log('🔄 PersonalImageBoard useEffect triggered, refreshKey:', refreshKey)
+
     if (user && drawingSubject) {
-      loadImages()
+      // Add timeout to prevent hanging
+      const loadTimeout = setTimeout(() => {
+        console.log('⏱️ PersonalImageBoard: Loading timeout reached')
+        setLoading(false)
+        setIsRefreshing(false)
+      }, 6000) // 6 second max loading time
+
+      loadImages().finally(() => {
+        clearTimeout(loadTimeout)
+      })
+
+      return () => clearTimeout(loadTimeout)
     } else {
       // For non-authenticated users, set loading to false so they see the empty state
       setLoading(false)
+      setImages([])
+      onImageCountChange(0)
     }
-  }, [user?.id, drawingSubject]) // Only depend on user.id, not the entire user object
+  }, [user?.id, drawingSubject, refreshKey]) // Include refreshKey to force reloads
 
   // Keyboard navigation for expanded image
   useEffect(() => {
@@ -59,11 +76,19 @@ export function PersonalImageBoard({
     if (!user) return
 
     try {
-      setLoading(true)
+      // Only show full loading state if we don't have images yet
+      // Otherwise, show a subtle refresh state
+      const hasExistingImages = images.length > 0
+      if (hasExistingImages) {
+        setIsRefreshing(true)
+      } else {
+        setLoading(true)
+      }
 
-      // Load images from new board system
-      const data = await BoardService.getBoardImages(drawingSubject)
-      console.log('📸 Loaded images from board:', data)
+      // Load images using simple service
+      console.log('📡 Fetching images for:', drawingSubject, 'user:', user.id)
+      const data = await SimpleImageService.getImages(drawingSubject, user.id)
+      console.log('📸 Loaded images from database:', data.length, 'images')
 
       setImages(data)
       onImageCountChange(data.length)
@@ -87,6 +112,7 @@ export function PersonalImageBoard({
       onImageCountChange(0)
     } finally {
       setLoading(false)
+      setIsRefreshing(false)
     }
   }
 
@@ -95,7 +121,7 @@ export function PersonalImageBoard({
 
     setDeletingId(imageId)
     try {
-      await BoardService.removeImageFromBoard(imageId)
+      await SimpleImageService.removeImage(imageId)
 
       setImages(prev => prev.filter(img => img.id !== imageId))
       setImageLoadStates(prev => {
@@ -111,7 +137,7 @@ export function PersonalImageBoard({
     }
   }
 
-  const handleImageClick = (image: BoardImage) => {
+  const handleImageClick = (image: SimpleImage) => {
     console.log('🖼️ Image clicked:', image.image_url)
     console.log('📸 Setting expanded image:', image)
     setExpandedImage(image)
@@ -148,17 +174,13 @@ export function PersonalImageBoard({
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
-          <div className="w-32 h-4 bg-gray-200 rounded animate-pulse"></div>
+          <div className="w-4 h-4 bg-slate-600 rounded animate-pulse"></div>
+          <div className="w-32 h-4 bg-slate-600 rounded animate-pulse"></div>
         </div>
-        <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 space-y-4">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div
-              key={i}
-              className="bg-gray-200 rounded-lg break-inside-avoid animate-pulse"
-              style={{ height: `${Math.random() * 100 + 150}px` }}
-            ></div>
-          ))}
+        <div className="bg-slate-700/30 border border-slate-600 rounded-lg p-8 text-center">
+          <div className="w-12 h-12 bg-slate-600 rounded-lg animate-pulse mx-auto mb-4"></div>
+          <div className="w-48 h-6 bg-slate-600 rounded animate-pulse mx-auto mb-2"></div>
+          <div className="w-64 h-4 bg-slate-600 rounded animate-pulse mx-auto"></div>
         </div>
       </div>
     )
@@ -167,18 +189,22 @@ export function PersonalImageBoard({
   if (images.length === 0) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
-          <div className="w-32 h-4 bg-gray-200 rounded animate-pulse"></div>
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium text-slate-300 flex items-center gap-2">
+            <ImageIcon className="w-4 h-4" />
+            Your Reference Collection (0)
+          </h3>
+          <div className="text-xs text-slate-400">
+            No images yet
+          </div>
         </div>
-        <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 space-y-4">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div
-              key={i}
-              className="bg-gray-200 rounded-lg break-inside-avoid animate-pulse"
-              style={{ height: `${Math.random() * 100 + 150}px` }}
-            ></div>
-          ))}
+
+        <div className="bg-slate-700/30 border border-slate-600 rounded-lg p-8 text-center">
+          <ImageIcon className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+          <h4 className="text-lg font-medium text-white mb-2">Start Building Your Collection</h4>
+          <p className="text-slate-300 text-sm">
+            Add reference images above to build your personal visual library for <strong className="text-orange-400">{drawingSubject}</strong>
+          </p>
         </div>
       </div>
     )
@@ -187,12 +213,16 @@ export function PersonalImageBoard({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-medium text-gray-900 flex items-center gap-2">
+        <h3 className="font-medium text-white flex items-center gap-2">
           <ImageIcon className="w-4 h-4" />
           Your Reference Collection ({images.length})
+          {isRefreshing && (
+            <div className="w-3 h-3 border border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+          )}
         </h3>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-slate-300">
           {images.length === 1 ? '1 image' : `${images.length} images`}
+          {isRefreshing && <span className="text-orange-400 ml-2">Updating...</span>}
         </div>
       </div>
 
@@ -326,23 +356,23 @@ export function PersonalImageBoard({
             {/* Image */}
             <img
               src={expandedImage.image_url}
-              alt={expandedImage.title || "Reference"}
+              alt="Reference"
               className="max-w-full max-h-[80vh] object-contain"
             />
 
             {/* Image info and actions */}
-            <div className="p-4 bg-white border-t border-gray-100">
+            <div className="p-4 bg-slate-800 border-t border-orange-500/20">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-gray-900">{expandedImage.title}</h3>
+                  <h3 className="font-semibold text-white">{expandedImage.drawing_subject}</h3>
                   {expandedImage.notes && (
-                    <p className="text-sm text-gray-600 mt-1">{expandedImage.notes}</p>
+                    <p className="text-sm text-slate-300 mt-1">{expandedImage.notes}</p>
                   )}
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleImageUrlClick(expandedImage.image_url)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                    className="bg-orange-400 hover:bg-orange-500 text-slate-900 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                     title="Open original"
                   >
                     <ExternalLink size={16} />
@@ -353,7 +383,7 @@ export function PersonalImageBoard({
                       handleDeleteImage(expandedImage.id)
                       setExpandedImage(null)
                     }}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                     title="Remove from collection"
                   >
                     <Trash2 size={16} />
@@ -366,8 +396,10 @@ export function PersonalImageBoard({
         </div>
       )}
 
-      <div className="text-xs text-gray-500 text-center bg-gray-50 p-3 rounded-lg">
+      <div className="text-xs text-slate-300 text-center bg-slate-700/30 p-3 rounded-lg border border-slate-600">
         💡 <strong>Pro tip:</strong> Click images to view full size • Right-click images to copy or save • Each reference improves your visual memory
+        <br />
+        <span className="text-slate-400 mt-1 block">References not showing? Try refreshing the page</span>
       </div>
     </div>
   )

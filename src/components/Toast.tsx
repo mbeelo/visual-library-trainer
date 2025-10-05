@@ -22,22 +22,22 @@ export default function Toast({ message, type, isVisible, onClose, duration = 30
   const getIcon = () => {
     switch (type) {
       case 'success':
-        return <CheckCircle size={20} className="text-green-600" />;
+        return <CheckCircle size={20} className="text-green-400" />;
       case 'error':
-        return <XCircle size={20} className="text-red-600" />;
+        return <XCircle size={20} className="text-red-400" />;
       case 'warning':
-        return <AlertCircle size={20} className="text-orange-600" />;
+        return <AlertCircle size={20} className="text-orange-400" />;
     }
   };
 
   const getStyles = () => {
     switch (type) {
       case 'success':
-        return 'bg-green-50 border-green-200 text-green-800';
+        return 'bg-slate-800 border-green-500/30 text-white';
       case 'error':
-        return 'bg-red-50 border-red-200 text-red-800';
+        return 'bg-slate-800 border-red-500/30 text-white';
       case 'warning':
-        return 'bg-orange-50 border-orange-200 text-orange-800';
+        return 'bg-slate-800 border-orange-500/30 text-white';
     }
   };
 
@@ -48,7 +48,7 @@ export default function Toast({ message, type, isVisible, onClose, duration = 30
         <span className="font-medium text-sm">{message}</span>
         <button
           onClick={onClose}
-          className="ml-2 text-gray-400 hover:text-gray-600 transition-colors"
+          className="ml-2 text-slate-400 hover:text-orange-400 transition-colors"
         >
           ×
         </button>

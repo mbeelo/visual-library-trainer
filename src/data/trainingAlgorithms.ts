@@ -11,20 +11,10 @@ export interface TrainingAlgorithm {
 
 export const trainingAlgorithms: TrainingAlgorithm[] = [
   {
-    id: 'balanced',
-    name: 'Balanced',
-    description: 'Smart mix with gentle focus on improvement areas',
-    icon: '⚖️',
-    strugglingWeight: 0.4,
-    recentWeight: 0.3,
-    categoryBalance: true,
-    spacedRepetition: false
-  },
-  {
     id: 'struggling-focus',
     name: 'Focused Practice',
     description: 'Prioritizes subjects you want to get better at',
-    icon: '🎯',
+    icon: '',
     strugglingWeight: 0.7,
     recentWeight: 0.2,
     categoryBalance: false,
@@ -34,7 +24,7 @@ export const trainingAlgorithms: TrainingAlgorithm[] = [
     id: 'fresh-exploration',
     name: 'Discovery Mode',
     description: 'Explores new subjects and fresh challenges',
-    icon: '🌟',
+    icon: '',
     strugglingWeight: 0.2,
     recentWeight: 0.1,
     categoryBalance: true,
@@ -44,7 +34,7 @@ export const trainingAlgorithms: TrainingAlgorithm[] = [
     id: 'spaced-repetition',
     name: 'Memory Trainer',
     description: 'Optimized timing for long-term retention',
-    icon: '🧠',
+    icon: '',
     strugglingWeight: 0.5,
     recentWeight: 0.4,
     categoryBalance: false,

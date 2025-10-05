@@ -95,3 +95,20 @@ export interface User {
 export interface EnhancedHistoryEntry extends HistoryEntry {
   images_used?: number;
 }
+
+// Streak and Progress Tracking Types
+export interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+  lastPracticeDate: string | null; // ISO date string
+}
+
+export interface ProgressStats {
+  totalSessions: number;
+  totalPracticeTime: number; // in seconds
+  subjectsMastered: number;
+  averageSessionTime: number;
+  practiceSessionsThisWeek: number;
+  practiceSessionsThisMonth: number;
+  weeklyGoal: number; // sessions per week
+}

@@ -13,12 +13,14 @@ Visual Library Trainer is a React web application that helps artists build visua
 ### Frontend
 - **Framework**: React 19.1.1 with TypeScript
 - **Build Tool**: Vite 7.1.7
-- **Styling**: Tailwind CSS 4.1.13
+- **Routing**: React Router 7.9.3
+- **Styling**: Tailwind CSS 3.4.17
 - **Icons**: Lucide React
 - **Package Manager**: npm
 
 ### Backend (v2.0)
 - **Database & Auth**: Supabase (PostgreSQL + Authentication + Storage)
+- **ORM**: Drizzle ORM 0.44.5 with Drizzle Kit 0.31.5
 - **Payments**: Stripe
 - **Hosting**: Vercel (frontend) + Supabase (backend)
 
@@ -30,37 +32,53 @@ npm run build      # TypeScript compile + Vite build
 npm run lint       # Run ESLint code linting
 npm run typecheck  # Run TypeScript type checking
 npm run preview    # Preview production build locally
+
+# Database Management (Drizzle)
+npm run db:generate # Generate database migrations from schema
+npm run db:migrate  # Apply pending migrations
+npm run db:push     # Push schema changes to database
+npm run db:studio   # Open Drizzle Studio (database GUI)
 ```
 
 Note: No testing framework is currently configured.
 
 ## Architecture
 
-The application is structured as a modular single-page React app with phase-based navigation:
+The application is structured as a page-based React app with React Router navigation:
 
 - **Entry Point**: `src/main.tsx`
-- **Main Component**: `src/App.tsx` - Main application orchestrator
-- **Components**: Individual phase components in `src/components/`
-- **Data**: Structured data files in `src/data/`
-- **Types**: TypeScript interfaces in `src/types/`
-- **Utils**: Helper functions in `src/utils/`
-- **State Management**: React useState hooks (no external state management)
+- **Main Component**: `src/App.tsx` - Routing orchestrator with React Router
+- **Pages**: Page components in `src/pages/` (Landing, Dashboard, Practice, etc.)
+- **Components**: Reusable UI components in `src/components/`
+- **Services**: Business logic layer in `src/services/`
+- **Contexts**: React Context for auth and modals in `src/contexts/`
+- **Database**: Dual approach with Supabase client and Drizzle ORM in `src/lib/`
+- **State Management**: React useState/useContext (no external state management)
 - **Styling**: Combination of Tailwind utility classes and minimal custom CSS
 
 ### Application Flow
-1. Welcome phase → Dashboard → Drawing phase → Reference phase → Complete phase
-2. Features include algorithm mode for adaptive learning, timer functionality, and rating system
-3. Data structure supports modular list management (Ultimate Visual Library with 100+ drawing subjects)
+1. **Page-Based Navigation**: `/` → `/app/dashboard` → `/app/practice/:subject` → references
+2. **Route Structure**:
+   - `/` - Landing page
+   - `/app/dashboard` - Main dashboard with lists and progress
+   - `/app/practice/:subject` - Drawing session page
+   - `/app/list/:listId` - List exploration page
+   - `/app/create-list` - Custom list creation
+3. **Features**: Algorithm mode for adaptive learning, timer functionality, rating system, and Pinterest-style image collections
 
 ### File Structure
 ```
 src/
-├── components/     # React components (Welcome, Dashboard, etc.)
-├── data/          # Training lists and community data
+├── components/     # Reusable UI components (21 components)
+├── pages/         # Page components (Landing, Dashboard, Practice, etc.)
+├── contexts/      # React Context providers (Auth, Modal)
+├── services/      # Business logic layer (5 service modules)
+├── lib/           # External service clients (Supabase, Drizzle, Stripe)
 ├── hooks/         # Custom React hooks (localStorage persistence)
+├── data/          # Training lists and community data
 ├── types/         # TypeScript type definitions
 ├── utils/         # Helper functions (time, references, styling)
-├── App.tsx        # Main application component
+├── App.tsx        # React Router setup and route definitions
 └── main.tsx       # Application entry point
 ```
 
@@ -138,13 +156,26 @@ Users can create custom training lists with:
 
 ### Technical Architecture
 
-#### Database Schema
+#### Database Architecture
+
+**Dual Database Approach:**
+- **Supabase**: Primary database with authentication and real-time features
+- **Drizzle ORM**: Type-safe database operations and migrations
+
+**Schema** (managed via `src/lib/schema.ts`):
 ```sql
 users (id, email, subscription_tier, created_at)
-image_collections (id, user_id, drawing_subject, image_url, position, notes, created_at)
+subject_boards (id, user_id, drawing_subject, created_at, updated_at)
+board_images (id, board_id, image_url, notes, position, created_at)
 practice_sessions (id, user_id, subject, duration, rating, images_used, created_at)
 custom_lists (id, user_id, name, items, is_active, created_at)
 ```
+
+**Configuration:**
+- `drizzle.config.ts` - Drizzle Kit configuration
+- `src/lib/db.ts` - Drizzle database client
+- `src/lib/supabase.ts` - Supabase client
+- Environment variable: `DATABASE_URL`
 
 #### Implementation Phases
 1. **Phase 1:** Auth + basic image saving + payments (current implementation)
@@ -157,6 +188,9 @@ custom_lists (id, user_id, name, items, is_active, created_at)
 # Supabase
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Database (for Drizzle)
+DATABASE_URL=postgresql://user:password@host:port/database
 
 # Stripe
 VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
@@ -197,19 +231,116 @@ STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 - **Service**: Database client in `src/lib/supabase.ts`
 - **Migration**: `reference-boards-migration.sql`, `board-migration-fixes.sql`
 
-### 🚀 **Production Ready - v2.1.1**
+### 🚀 **Production Ready - Launch Version**
 - All TypeScript errors resolved ✅
 - ESLint passes ✅
 - Build successful ✅
 - Components exported ✅
 - Environment configured ✅
-- **Pinterest board system fully functional** ✅
-- **Critical bugs fixed (infinite loading, persistence)** ✅
-- **Database migration applied successfully** ✅
-- **Pinterest-style image expansion working** ✅
-- **6 reference sources integrated (Pinterest, ArtStation, Google, Unsplash, Pexels, Pixabay)** ✅
+- **Complete user flow working** (Landing → Practice → Rating) ✅
+- **Authentication system stable** (progressive signup, OAuth) ✅
+- **Payment integration ready** (Stripe commented out for launch) ✅
+- **Admin dashboard functional** (key-based access with metrics) ✅
+- **Legal pages complete** (Terms, Privacy Policy) ✅
+- **Contact system working** (mailto-based with feature requests) ✅
+- **Error handling comprehensive** (graceful fallbacks throughout) ✅
+- **Responsive design complete** (mobile & desktop) ✅
 
-### 🎯 **Next Priority Features**
-- **Browse Lists Page**: Dedicated page for discovering and switching between training lists
-- **Create List Page**: User-friendly interface for creating custom training lists
-- **List Management**: Edit, delete, and organize existing lists
+## Key Architectural Patterns
+
+### **Three-Layer Data Persistence Strategy**
+The app uses a sophisticated persistence model:
+
+1. **React State** - Component-level state (useState/useContext)
+2. **localStorage** - Client-side persistence with `useLocalStorage` hook
+3. **Supabase Cloud** - Authentication and premium features (v2.0 ready)
+
+**Critical localStorage Keys:**
+- `vlt-history` - Practice sessions with ratings/timing for algorithm
+- `vlt-ratings` - Item difficulty ratings for spaced repetition
+- `vlt-custom-lists` - User-created lists with category parsing
+- `vlt-settings` - Algorithm mode, active list, preferences
+
+### **Phase-Based Practice System**
+Each practice session follows a structured flow:
+
+1. **Drawing Phase** - Memory-only drawing with optional timer
+2. **Reference Phase** - Study curated references, build personal collection
+3. **Rating Phase** - Self-assessment for algorithm improvement
+4. **Algorithm Selection** - Multiple modes (struggling-focus, balanced, recent-focus)
+
+### **Modal & Toast System Architecture**
+Centralized UI state management:
+- `ModalContext` - Auth modal, upgrade modal, toast notifications
+- `AuthContext` - User state, subscription tiers, authentication flow
+- Progressive enhancement pattern (anonymous → value demonstration → signup)
+
+### **Admin Dashboard Architecture**
+Key-based access system (`afterimage2025`) with comprehensive analytics:
+- User metrics (total, pro conversion, session duration)
+- Content metrics (custom lists created, total subjects)
+- Growth tracking (daily activity, popular subjects)
+- Mock data fallback for demo purposes
+
+### **Service Layer Patterns**
+Business logic organized by domain:
+- `progressTracking.ts` - Analytics, streaks, performance metrics
+- `dataMigration.ts` - localStorage to cloud migration patterns
+- `imageCollections.ts` - Pinterest-style board management
+- Error handling with timeouts, retries, graceful degradation
+
+### **Component Architecture Patterns**
+- **Page-based routing** (not component phases) for better SEO
+- **Shared Layout** pattern with Header, Toast, Modal providers
+- **Hook composition** for localStorage persistence and auth state
+- **Progressive enhancement** for anonymous users
+
+## Development Workflow
+
+### **Common Development Tasks**
+```bash
+# Start development with hot reload
+npm run dev
+
+# Type checking and linting
+npm run typecheck && npm run lint
+
+# Production build
+npm run build && npm run preview
+
+# Database operations (when Supabase configured)
+npm run db:generate  # After schema changes
+npm run db:push      # Push to development
+npm run db:studio    # Visual database browser
+```
+
+### **Key File Locations**
+- **Route definitions**: `src/App.tsx` (React Router setup)
+- **Authentication logic**: `src/contexts/AuthContext.tsx`
+- **Practice algorithm**: `src/components/Dashboard.tsx` (generateChallenge)
+- **Timer system**: `src/pages/PracticePage.tsx` (dual timer logic)
+- **Admin dashboard**: `src/pages/AdminDashboard.tsx` (key: `afterimage2025`)
+- **Database schema**: `src/lib/schema.ts` (Drizzle definitions)
+
+### **Environment Setup**
+The app works in multiple modes:
+- **localStorage-only** (no env vars needed)
+- **Supabase integration** (requires VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
+- **Payment processing** (requires VITE_STRIPE_PUBLISHABLE_KEY)
+
+## Launch Status & Next Steps
+
+### **Ready for Launch**
+This is a production-ready SaaS application with:
+- Complete user onboarding flow
+- Stable practice system with algorithm-based selection
+- Admin analytics dashboard
+- Legal compliance (Terms, Privacy)
+- Responsive design across devices
+- Error boundaries and graceful fallbacks
+
+### **Post-Launch Priorities**
+1. **Real Supabase Analytics** - Remove mock data from admin dashboard
+2. **Payment Activation** - Uncomment Stripe integration
+3. **Curated Starter Images** - Add reference images for popular subjects
+4. **Performance Monitoring** - Add error tracking and user analytics

@@ -4,14 +4,16 @@ import Header from './Header'
 import { defaultList, communityLists } from '../data'
 import { useLocalStorage } from '../hooks'
 import { TrainingList } from '../types'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Toast from './Toast'
 import { AuthModal } from './AuthModal'
 import { UpgradeModal } from './UpgradeModal'
 import { ModalProvider } from '../contexts/ModalContext'
+import { useAuth } from '../contexts/AuthContext'
 
 export function Layout() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [customLists] = useLocalStorage<TrainingList[]>('vlt-custom-lists', [])
   const [settings, setSettings] = useLocalStorage('vlt-settings', {
     activeListId: defaultList.id
@@ -21,6 +23,14 @@ export function Layout() {
     isOpen: boolean
     mode: 'signin' | 'signup'
   }>({ isOpen: false, mode: 'signin' })
+
+  // Auto-close auth modal when user becomes authenticated
+  useEffect(() => {
+    if (user && authModal.isOpen) {
+      console.log('User authenticated, closing auth modal')
+      setAuthModal(prev => ({ ...prev, isOpen: false }))
+    }
+  }, [user, authModal.isOpen])
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [toast, setToast] = useState<{
     message: string
@@ -49,7 +59,7 @@ export function Layout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-slate-900 p-6">
       <div className="max-w-6xl mx-auto">
         <Header
           activeList={activeList}
@@ -98,8 +108,13 @@ export function Layout() {
               AfterImage
             </span>
           </div>
-          <div className="text-gray-500 text-sm">
+          <div className="text-orange-400 text-sm mb-2">
             The art of seeing twice
+          </div>
+          <div className="text-slate-400 text-xs">
+            <a href="/app/contact" className="hover:text-orange-400 transition-colors">
+              Contact & Support
+            </a>
           </div>
         </footer>
       </div>

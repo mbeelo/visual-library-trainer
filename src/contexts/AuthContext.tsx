@@ -60,7 +60,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔴 Auth state change:', event, session?.user?.email || 'no user')
       setUser(session?.user ?? null)
       if (session?.user) {
         await fetchUserProfile(session.user.id)
@@ -146,14 +147,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    console.log('🔴 SignOut function called!')
+
+    // Try Supabase signOut first with a reasonable timeout
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error('Error signing out:', error)
-      }
-      // Don't reload here - let the auth state change handle the UI updates
+      console.log('🔴 Calling supabase.auth.signOut()...')
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('SignOut timeout after 3 seconds')), 3000)
+      )
+
+      const signOutPromise = supabase.auth.signOut()
+      await Promise.race([signOutPromise, timeoutPromise])
+
+      console.log('🔴 Supabase signOut successful!')
+      // If successful, the auth state change will handle UI updates
     } catch (error) {
-      console.error('Unexpected error during sign out:', error)
+      console.log('🔴 Supabase signOut failed/timeout:', (error as Error).message)
+      console.log('🔴 Manually clearing auth state and tokens...')
+
+      // Manually clear ONLY Supabase auth tokens from localStorage
+      // Preserve user's practice data (vlt-history, vlt-ratings, vlt-custom-lists, etc.)
+      const keys = Object.keys(localStorage)
+      keys.forEach(key => {
+        if (key.startsWith('sb-') && key.includes('auth-token')) {
+          localStorage.removeItem(key)
+          console.log('🔴 Removed Supabase auth token:', key)
+        }
+      })
+
+      // Reset local state
+      setUser(null)
+      setSubscriptionTier('free')
     }
   }
 

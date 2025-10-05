@@ -1,19 +1,16 @@
 import {
-  TrendingUp,
-  Activity,
-  Target,
-  Timer,
-  Volume2,
-  VolumeX,
-  Brain,
-  Play,
-  Clock,
-  BarChart3,
-  Users,
-  Zap
+  Eye,
+  Search,
+  Filter,
+  BookOpen,
+  Trophy,
+  ImageIcon,
+  Plus
 } from 'lucide-react';
-import { formatTime, getRatingColor } from '../utils';
-import { HistoryEntry, ItemRatings, TrainingAlgorithm } from '../types';
+import { HistoryEntry, ItemRatings, TrainingAlgorithm, TrainingList } from '../types';
+import { SimpleImageService } from '../services/simpleImageService';
+import { useAuth } from '../contexts/AuthContext';
+import { useState, useEffect } from 'react';
 
 interface DashboardProps {
   algorithmMode: boolean;
@@ -27,274 +24,365 @@ interface DashboardProps {
   selectedAlgorithm: TrainingAlgorithm;
   trainingAlgorithms: TrainingAlgorithm[];
   onAlgorithmChange: (algorithm: TrainingAlgorithm) => void;
+  activeList: TrainingList;
+  onPracticeSubject?: (subject: string, category: string) => void;
+}
+
+interface SubjectData {
+  name: string;
+  category: string;
+  referenceCount: number;
+  memoryStrength: number; // 0-5 based on ratings
+  recentImages: string[]; // URLs of recent reference images
+  lastPracticed?: Date;
 }
 
 export default function Dashboard({
-  algorithmMode,
-  setAlgorithmMode,
   generateChallenge,
   history,
   itemRatings,
-  soundEnabled,
-  setSoundEnabled,
-  selectedAlgorithm,
-  trainingAlgorithms,
-  onAlgorithmChange
+  activeList,
+  onPracticeSubject
 }: DashboardProps) {
-  // Calculate KPIs
-  const totalSessions = history.length;
-  const needsPractice = Object.values(itemRatings).filter(r => r === 'struggled' || r === 'failed').length;
-  const mastered = Object.values(itemRatings).filter(r => r === 'easy').length;
-  const avgSessionTime = history.length > 0 ?
-    Math.round(history.reduce((sum, entry) => sum + entry.time, 0) / history.length) : 0;
+  const { user } = useAuth();
+  const [subjectData, setSubjectData] = useState<SubjectData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // Recent sessions (last 7 days for trending)
-  const last7Days = history.filter(entry => {
-    const entryDate = new Date(entry.date);
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    return entryDate >= weekAgo;
+  // Load subject data with reference counts (bulk optimized)
+  useEffect(() => {
+    const loadSubjectData = async () => {
+      if (!user || !activeList) {
+        console.log('👤 No user or activeList:', { user: !!user, activeList: !!activeList });
+        setLoading(false);
+        return;
+      }
+
+      console.log('📚 Loading subject data for list:', activeList.name, 'with', Object.keys(activeList.categories).length, 'categories');
+      setLoading(true);
+      const subjects: SubjectData[] = [];
+
+      try {
+        // 🚀 BULK LOAD: Get all user images at once instead of individual queries
+        const allUserImages = await SimpleImageService.getAllUserImages(user.id);
+        console.log('📸 Bulk loaded images for', Object.keys(allUserImages).length, 'subjects');
+
+        // Flatten all subjects from the active list
+        for (const [category, items] of Object.entries(activeList.categories)) {
+          for (const item of items) {
+            // Get images for this subject from bulk data (no database call!)
+            const images = allUserImages[item] || [];
+
+            // Calculate memory strength from ratings (0-5 scale)
+            const rating = itemRatings[item];
+            const memoryStrength = rating === 'easy' ? 5 :
+                                 rating === 'got-it' ? 3 :
+                                 rating === 'struggled' ? 2 :
+                                 rating === 'failed' ? 1 : 0;
+
+            // Get recent image URLs (first 3 for preview)
+            const recentImages = images.slice(0, 3).map(img => img.image_url);
+
+            // Find last practice date (use current history at time of execution)
+            const lastSession = history.find(h => h.item === item);
+            const lastPracticed = lastSession ? new Date(lastSession.date) : undefined;
+
+            subjects.push({
+              name: item,
+              category,
+              referenceCount: images.length,
+              memoryStrength,
+              recentImages,
+              lastPracticed
+            });
+          }
+        }
+
+        console.log('✅ Subject data loaded:', subjects.length, 'subjects from bulk data');
+      } catch (error) {
+        console.error('💥 Error in bulk loading subject data:', error);
+        // Fallback: create subjects with default values
+        for (const [category, items] of Object.entries(activeList.categories)) {
+          for (const item of items) {
+            const rating = itemRatings[item];
+            const memoryStrength = rating === 'easy' ? 5 :
+                                 rating === 'got-it' ? 3 :
+                                 rating === 'struggled' ? 2 :
+                                 rating === 'failed' ? 1 : 0;
+
+            const lastSession = history.find(h => h.item === item);
+            const lastPracticed = lastSession ? new Date(lastSession.date) : undefined;
+
+            subjects.push({
+              name: item,
+              category,
+              referenceCount: 0,
+              memoryStrength,
+              recentImages: [],
+              lastPracticed
+            });
+          }
+        }
+      }
+
+      setSubjectData(subjects);
+      setLoading(false);
+    };
+
+    loadSubjectData();
+  }, [user?.id, activeList?.name, itemRatings]); // Removed history to prevent constant reloads
+
+  // Filter subjects based on search and category
+  const filteredSubjects = subjectData.filter(subject => {
+    const matchesSearch = subject.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || subject.category === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
+
+  // Calculate library stats
+  const totalSubjects = subjectData.length;
+  const totalReferences = subjectData.reduce((sum, s) => sum + s.referenceCount, 0);
+  const masteredSubjects = subjectData.filter(s => s.memoryStrength >= 4).length;
+  const categories = Object.keys(activeList?.categories || {});
 
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
-      <div className="flex items-center justify-between">
+      {/* Hero Header - Visual Memory Palace */}
+      <div className="bg-slate-800 border border-orange-500/20 rounded-xl p-8">
+        <div className="flex items-center justify-between">
+          <div className="space-y-3">
+            <div>
+              <h1 className="text-3xl font-bold text-white animate-fade-in">
+                {activeList.name}
+              </h1>
+              <p className="text-orange-400 font-medium">The art of seeing twice</p>
+            </div>
+            <p className="text-slate-300 max-w-2xl">
+              Browse your growing collection, then <strong className="text-orange-400">trust your mind's eye first</strong>.
+              Each reference validates what your memory already knows.
+            </p>
+
+            {/* Quick Stats */}
+            <div className="flex items-center gap-6 text-sm">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-orange-400" />
+                <span className="font-medium text-white">{totalSubjects}</span>
+                <span className="text-slate-300">subjects</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-orange-400" />
+                <span className="font-medium text-white">{totalReferences}</span>
+                <span className="text-slate-300">references</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-orange-400" />
+                <span className="font-medium text-white">{masteredSubjects}</span>
+                <span className="text-slate-300">mastered</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center space-y-3">
+            <button
+              onClick={generateChallenge}
+              className="bg-orange-400 hover:bg-orange-500 text-slate-900 font-semibold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl hover:shadow-orange-500/25 transform hover:scale-105 inline-flex items-center gap-3 relative"
+            >
+              <div className="text-lg">
+                Start Drawing
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Filter Controls */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4 flex-1">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search your visual library..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-slate-600 bg-slate-700 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-slate-400" />
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-3 py-2 border border-slate-600 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 text-sm"
+            >
+              <option value="all">All Categories</option>
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="text-sm text-slate-400">
+          {filteredSubjects.length} of {totalSubjects} subjects
+        </div>
+      </div>
+
+      {/* Visual Library Grid */}
+      {loading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="bg-slate-800 border border-slate-600 rounded-xl p-4 shadow-sm animate-pulse">
+              <div className="w-full h-32 bg-slate-700 rounded-lg mb-3"></div>
+              <div className="h-4 bg-slate-700 rounded mb-2"></div>
+              <div className="h-3 bg-slate-700 rounded w-3/4"></div>
+            </div>
+          ))}
+        </div>
+      ) : filteredSubjects.length === 0 ? (
+        <div className="text-center py-16">
+          <div className="w-24 h-24 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Search className="w-12 h-12 text-slate-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-white mb-2">No subjects found</h3>
+          <p className="text-slate-300 mb-6">
+            {searchTerm || selectedCategory !== 'all'
+              ? 'Try adjusting your search or filter criteria'
+              : 'Your visual library is waiting to be built'}
+          </p>
+          {(!searchTerm && selectedCategory === 'all') && (
+            <button
+              onClick={generateChallenge}
+              className="bg-orange-400 hover:bg-orange-500 text-slate-900 font-medium px-6 py-3 rounded-lg transition-colors inline-flex items-center gap-2 hover:shadow-lg hover:shadow-orange-500/25"
+            >
+              <Eye className="w-5 h-5" />
+              Start Building Your Library
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          {filteredSubjects.map((subject) => (
+            <SubjectCard
+              key={subject.name}
+              subject={subject}
+              onPractice={() => {
+                if (onPracticeSubject) {
+                  onPracticeSubject(subject.name, subject.category)
+                } else {
+                  generateChallenge()
+                }
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Philosophy Footer */}
+      <div className="text-center py-8 border-t border-orange-500/20">
+        <p className="text-slate-300 max-w-2xl mx-auto">
+          <strong className="text-orange-400">Remember:</strong> Your mind already knows more than you realize.
+          Draw from memory first, then let your references validate and enrich what you've conjured.
+          <br />
+          <span className="text-sm italic text-orange-400">The art of seeing twice</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Subject Card Component
+function SubjectCard({ subject, onPractice }: { subject: SubjectData; onPractice: () => void }) {
+  const getMemoryStrengthColor = (strength: number) => {
+    if (strength >= 4) return 'bg-green-500';
+    if (strength >= 3) return 'bg-yellow-500';
+    if (strength >= 1) return 'bg-orange-500';
+    return 'bg-gray-300';
+  };
+
+  const getMemoryStrengthText = (strength: number) => {
+    if (strength >= 4) return 'Strong Memory';
+    if (strength >= 3) return 'Growing Memory';
+    if (strength >= 1) return 'Weak Memory';
+    return 'Untested';
+  };
+
+  const getReferenceStrengthInfo = (count: number) => {
+    if (count === 0) return { text: 'No References', color: 'text-slate-400 bg-slate-700 border-slate-600' };
+    if (count < 3) return { text: `${count} Reference${count === 1 ? '' : 's'}`, color: 'text-orange-400 bg-orange-500/20 border-orange-500/30' };
+    if (count < 5) return { text: `${count} References`, color: 'text-orange-400 bg-orange-500/20 border-orange-500/30' };
+    return { text: `${count} References`, color: 'text-green-400 bg-green-500/20 border-green-500/30' };
+  };
+
+  const referenceInfo = getReferenceStrengthInfo(subject.referenceCount);
+
+  return (
+    <div className="bg-slate-800 border border-orange-500/20 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:shadow-orange-500/25 transition-all duration-200 group">
+      {/* Reference Preview Area */}
+      <div className="aspect-square bg-slate-700 relative overflow-hidden">
+        {subject.recentImages.length > 0 ? (
+          <div className="grid grid-cols-2 gap-1 p-2 h-full">
+            {subject.recentImages.slice(0, 4).map((url, idx) => (
+              <div key={idx} className="bg-slate-600 rounded-lg overflow-hidden">
+                <img
+                  src={url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            ))}
+            {subject.recentImages.length < 4 && [...Array(4 - subject.recentImages.length)].map((_, idx) => (
+              <div key={`empty-${idx}`} className="bg-slate-600 rounded-lg flex items-center justify-center">
+                <Plus className="w-4 h-4 text-slate-400" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <ImageIcon className="w-12 h-12 text-slate-400 mx-auto mb-2" />
+              <p className="text-xs text-slate-300">No references yet</p>
+            </div>
+          </div>
+        )}
+
+        {/* Memory Strength Indicator */}
+        <div className="absolute top-2 right-2">
+          <div className={`w-3 h-3 rounded-full ${getMemoryStrengthColor(subject.memoryStrength)}`}></div>
+        </div>
+      </div>
+
+      {/* Card Content */}
+      <div className="p-4 space-y-3">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Practice Dashboard</h1>
-          <p className="text-sm text-gray-600 mt-1">Track your drawing progress and maintain consistent practice</p>
+          <h3 className="font-semibold text-white mb-1">{subject.name}</h3>
+          <p className="text-xs text-slate-400">{subject.category}</p>
         </div>
+
+        <div className="space-y-2">
+          {/* Reference Count */}
+          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${referenceInfo.color}`}>
+            {referenceInfo.text}
+          </div>
+
+          {/* Memory Strength */}
+          <div className="text-xs text-slate-300">
+            Memory: {getMemoryStrengthText(subject.memoryStrength)}
+          </div>
+        </div>
+
+        {/* Practice Button */}
         <button
-          onClick={generateChallenge}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg transition-colors inline-flex items-center gap-2 shadow-sm"
+          onClick={onPractice}
+          className="w-full bg-orange-400 hover:bg-orange-500 text-slate-900 font-medium py-2 px-4 rounded-lg transition-all transform group-hover:scale-105 flex items-center justify-center gap-2 text-sm hover:shadow-lg hover:shadow-orange-500/25 relative"
         >
-          <Play className="w-5 h-5" />
-          Start Practice
+          <Eye className="w-4 h-4" />
+          Draw Blind First
         </button>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Sessions */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Sessions</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{totalSessions}</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-            <span className="text-sm text-green-600 font-medium">+{last7Days.length}</span>
-            <span className="text-sm text-gray-500 ml-1">this week</span>
-          </div>
-        </div>
-
-        {/* Needs Practice */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Needs Practice</p>
-              <p className="text-3xl font-bold text-orange-600 mt-2">{needsPractice}</p>
-            </div>
-            <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
-              <Target className="w-6 h-6 text-orange-600" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <span className="text-sm text-gray-500">Items marked struggled/failed</span>
-          </div>
-        </div>
-
-        {/* Mastered */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Mastered</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">{mastered}</p>
-            </div>
-            <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-              <Zap className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <span className="text-sm text-gray-500">Items marked as easy</span>
-          </div>
-        </div>
-
-        {/* Avg Session Time */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Avg Session</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{formatTime(avgSessionTime)}</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-              <Timer className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <span className="text-sm text-gray-500">Average practice duration</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Settings Panel */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Training Mode */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Training Mode</h3>
-              <div className="flex items-center">
-                <button
-                  onClick={() => setAlgorithmMode(!algorithmMode)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    algorithmMode ? 'bg-blue-600' : 'bg-gray-200'
-                  }`}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    algorithmMode ? 'translate-x-6' : 'translate-x-1'
-                  }`} />
-                </button>
-              </div>
-            </div>
-
-            {algorithmMode ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                  <Brain className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="font-medium text-blue-900">Smart Algorithm</div>
-                    <div className="text-xs text-blue-700">Adapts to your progress</div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Algorithm Type</label>
-                  <select
-                    value={selectedAlgorithm.id}
-                    onChange={(e) => {
-                      const algorithm = trainingAlgorithms.find(alg => alg.id === e.target.value);
-                      if (algorithm) onAlgorithmChange(algorithm);
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {trainingAlgorithms.filter(alg => alg.id !== 'random').map(algorithm => (
-                      <option key={algorithm.id} value={algorithm.id}>
-                        {algorithm.icon} {algorithm.name}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-gray-500 mt-2">{selectedAlgorithm.description}</p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="text-2xl">🎲</div>
-                <div>
-                  <div className="font-medium text-gray-900">Random Mode</div>
-                  <div className="text-xs text-gray-600">Completely random selection</div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Quick Settings */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Settings</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {soundEnabled ? <Volume2 className="w-5 h-5 text-gray-600" /> : <VolumeX className="w-5 h-5 text-gray-600" />}
-                  <span className="text-sm font-medium text-gray-900">Sound Alerts</span>
-                </div>
-                <button
-                  onClick={() => setSoundEnabled(!soundEnabled)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    soundEnabled ? 'bg-blue-600' : 'bg-gray-200'
-                  }`}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    soundEnabled ? 'translate-x-6' : 'translate-x-1'
-                  }`} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <BarChart3 className="w-4 h-4" />
-                  Last 10 sessions
-                </div>
-              </div>
-            </div>
-
-            {history.length > 0 ? (
-              <div className="divide-y divide-gray-100">
-                {history.slice().reverse().slice(0, 10).map((entry: HistoryEntry, idx: number) => (
-                  <div key={idx} className="p-6 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                          <Activity className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900">{entry.item}</div>
-                          <div className="text-sm text-gray-500">{entry.category}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRatingColor(entry.rating)}`}>
-                          {entry.rating === 'easy' ? '😊 Easy' :
-                           entry.rating === 'got-it' ? '👍 Okay' :
-                           entry.rating === 'struggled' ? '😅 Hard' : '😵 Failed'}
-                        </span>
-
-                        <div className="flex items-center gap-1 text-sm text-gray-500">
-                          <Clock className="w-4 h-4" />
-                          {formatTime(entry.time)}
-                        </div>
-
-                        <div className="text-xs text-gray-400">
-                          {new Date(entry.date).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-12 text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No practice sessions yet</h3>
-                <p className="text-gray-500 mb-6">Start your first practice session to see your progress here</p>
-                <button
-                  onClick={generateChallenge}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors inline-flex items-center gap-2"
-                >
-                  <Play className="w-4 h-4" />
-                  Start First Session
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );

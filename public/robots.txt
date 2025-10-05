@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /app/dashboard
+Allow: /app/contact
+
+Disallow: /app/account
+Disallow: /app/practice/
+Disallow: /app/list/
+Disallow: /app/create-list
+
+Sitemap: https://afterimage.app/sitemap.xml
