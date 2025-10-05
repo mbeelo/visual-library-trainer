@@ -14,3 +14,4 @@ export { UpgradeModal } from './UpgradeModal';
 export { MigrationPrompt } from './MigrationPrompt';
 export { Layout } from './Layout';
 export { ProtectedRoute } from './ProtectedRoute';
+export { ScrollToTop } from './ScrollToTop';

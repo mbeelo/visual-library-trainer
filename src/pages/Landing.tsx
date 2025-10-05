@@ -171,8 +171,8 @@ export function Landing() {
                 <h2 className="text-4xl font-bold mb-6"><span className="text-orange-400">Draw</span> from memory first</h2>
                 <p className="text-xl text-slate-300 mb-8 leading-relaxed">
                   No cheating, no googling, no references. Just you and a blank canvas with a simple prompt.
-                  This forces your brain to recall what it knows and reveals exactly what you need to study.
-                  The timer is optional - take as long as you need.
+                  You'll quickly discover what you actually remember vs. what you think you know.
+                  The timer is optional - draw at your own pace.
                 </p>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
@@ -203,8 +203,8 @@ export function Landing() {
                 <h2 className="text-4xl font-bold mb-6"><span className="text-orange-400">Study</span> references and <span className="text-orange-400">build</span> your visual library</h2>
                 <p className="text-xl text-slate-300 mb-8 leading-relaxed">
                   Now see what you missed. Study curated references and save any images you find
-                  to your personal collection. Rate your attempt to help our algorithm focus on
-                  what you need to practice most.
+                  to your personal collection. Rate how your drawing went so the app knows
+                  which subjects to show you more often.
                 </p>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
@@ -223,7 +223,7 @@ export function Landing() {
                     <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center">
                       <span className="text-slate-900 text-sm font-bold">✓</span>
                     </div>
-                    <span className="text-slate-300">Smart algorithm adapts to your progress</span>
+                    <span className="text-slate-300">App learns what you need to practice</span>
                   </div>
                 </div>
               </div>
@@ -281,7 +281,7 @@ export function Landing() {
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-5xl font-bold mb-6">Stop depending on references</h2>
             <p className="text-xl text-slate-300 mb-12">
-              Start building the visual memory that separates good artists from great ones.
+              Build the visual memory that lets you draw confidently from imagination.
             </p>
 
             <div className="grid md:grid-cols-3 gap-8 mb-12">
