@@ -39,7 +39,7 @@ Transform your drawing skills with personalized visual reference collections. Vi
 ### 1. Environment Setup
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/visual-library-trainer.git
+git clone https://github.com/mbeelo/visual-library-trainer.git
 cd visual-library-trainer
 
 # Install dependencies
@@ -266,7 +266,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - **Documentation**: Check our comprehensive guides
-- **Issues**: [GitHub Issues](https://github.com/your-username/visual-library-trainer/issues)
+- **Issues**: [GitHub Issues](https://github.com/mbeelo/visual-library-trainer/issues)
 - **Email**: support@your-domain.com
 - **Discord**: [Join our community](https://discord.gg/your-invite)
 
