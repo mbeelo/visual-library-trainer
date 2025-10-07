@@ -279,8 +279,17 @@ export class SimpleImageService {
 
       const startTime = Date.now()
 
+      // Try with fresh client instance to avoid connection reuse issues
+      const { createClient } = await import('@supabase/supabase-js')
+      const freshClient = createClient(
+        import.meta.env.VITE_SUPABASE_URL as string,
+        import.meta.env.VITE_SUPABASE_ANON_KEY as string
+      )
+
+      console.log('🆕 Using fresh Supabase client for INSERT')
+
       // Add timeout to prevent infinite hangs
-      const insertPromise = supabase
+      const insertPromise = freshClient
         .from('image_collections')
         .insert([insertData])
         .select()
