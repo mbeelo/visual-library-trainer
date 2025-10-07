@@ -25,6 +25,49 @@ export class SimpleImageService {
   private static bulkCache: Map<string, { data: Record<string, SimpleImage[]>, timestamp: number }> = new Map()
   private static CACHE_DURATION = 30000 // 30 seconds
 
+  // Emergency localStorage fallback for when Supabase is down
+  private static FALLBACK_KEY = 'vlt-emergency-images'
+
+  // Emergency localStorage operations
+  private static getFallbackImages(userId: string, subject: string): SimpleImage[] {
+    try {
+      const stored = localStorage.getItem(this.FALLBACK_KEY)
+      if (!stored) return []
+
+      const data = JSON.parse(stored)
+      const userImages = data[userId] || {}
+      return userImages[subject] || []
+    } catch (error) {
+      console.error('Error reading fallback images:', error)
+      return []
+    }
+  }
+
+  private static saveFallbackImage(userId: string, subject: string, image: Omit<SimpleImage, 'id' | 'created_at'>): SimpleImage {
+    try {
+      const stored = localStorage.getItem(this.FALLBACK_KEY)
+      const data = stored ? JSON.parse(stored) : {}
+
+      if (!data[userId]) data[userId] = {}
+      if (!data[userId][subject]) data[userId][subject] = []
+
+      const newImage: SimpleImage = {
+        ...image,
+        id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
+        created_at: new Date().toISOString()
+      }
+
+      data[userId][subject].push(newImage)
+      localStorage.setItem(this.FALLBACK_KEY, JSON.stringify(data))
+
+      console.log('💾 Saved image to localStorage fallback:', newImage.id)
+      return newImage
+    } catch (error) {
+      console.error('Error saving fallback image:', error)
+      throw error
+    }
+  }
+
   // Get ALL user images at once for bulk loading (dashboard optimization)
   static async getAllUserImages(userId: string): Promise<Record<string, SimpleImage[]>> {
     console.log('🔍 SimpleImageService.getAllUserImages called for userId:', userId)
@@ -158,13 +201,16 @@ export class SimpleImageService {
           console.error(`⏱️ Query timed out on attempt ${attempt}`)
         }
         if (attempt === 2) {
-          console.error('🚨 All retry attempts failed - returning empty array')
-          return []
+          console.error('🚨 All Supabase attempts failed - falling back to localStorage')
+          const fallbackImages = this.getFallbackImages(userId, subject)
+          console.log(`📦 Fallback returned ${fallbackImages.length} images from localStorage`)
+          return fallbackImages
         }
         // Continue to next attempt
       }
     }
 
+    console.error('🚨 Unexpected: Reached end of getImages without result')
     return []
   }
 
@@ -343,7 +389,26 @@ export class SimpleImageService {
       return data
     } catch (err) {
       console.error('💥 Exception in addImage:', err)
-      throw err
+      console.log('🚨 Supabase addImage failed - falling back to localStorage')
+
+      try {
+        const fallbackImage = this.saveFallbackImage(userId, subject, {
+          user_id: userId,
+          drawing_subject: subject,
+          image_url: imageInput.image_url,
+          position: 0, // Will be overridden by localStorage logic
+          notes: imageInput.notes || null
+        })
+
+        // Invalidate cache when image is added via fallback
+        this.bulkCache.delete(userId)
+
+        console.log('✅ Successfully saved to localStorage fallback')
+        return fallbackImage
+      } catch (fallbackErr) {
+        console.error('💥 Even localStorage fallback failed:', fallbackErr)
+        throw err // Throw original Supabase error
+      }
     }
   }
 
