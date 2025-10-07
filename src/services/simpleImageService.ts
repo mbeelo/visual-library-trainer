@@ -263,10 +263,10 @@ export class SimpleImageService {
 
   // Add image (using existing image_collections table)
   static async addImage(subject: string, imageInput: SimpleImageInput, userId: string): Promise<SimpleImage> {
-    console.log('🔧 addImage called with:', { subject, userId, imageInput })
+    console.log('🔧 addImage called with:', JSON.stringify({ subject, userId, imageInput }, null, 2))
 
     try {
-      console.log('🔧 Starting RAW Supabase insert (no timeout)...')
+      console.log('🔧 Starting Supabase insert with 10 second timeout...')
 
       const insertData = {
         user_id: userId,
@@ -275,16 +275,25 @@ export class SimpleImageService {
         position: 0,
         notes: imageInput.notes || null
       }
-      console.log('📝 Insert data:', insertData)
+      console.log('📝 Insert data:', JSON.stringify(insertData, null, 2))
 
       const startTime = Date.now()
 
-      // Use exact same pattern as working isolated test
-      const result = await supabase
+      // Add timeout to prevent infinite hangs
+      const insertPromise = supabase
         .from('image_collections')
         .insert([insertData])
         .select()
         .single()
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          console.log('⏱️ INSERT timeout reached after 10 seconds')
+          reject(new Error('INSERT timeout after 10 seconds'))
+        }, 10000)
+      })
+
+      const result = await Promise.race([insertPromise, timeoutPromise]) as any
 
       const duration = Date.now() - startTime
       console.log(`📊 RAW insert completed in ${duration}ms`)
