@@ -33,12 +33,12 @@ export function PersonalImageBoard({
     console.log('🔄 PersonalImageBoard useEffect triggered, refreshKey:', refreshKey)
 
     if (user && drawingSubject) {
-      // Add timeout to prevent hanging
+      // Increased timeout for better reliability
       const loadTimeout = setTimeout(() => {
         console.log('⏱️ PersonalImageBoard: Loading timeout reached')
         setLoading(false)
         setIsRefreshing(false)
-      }, 6000) // 6 second max loading time
+      }, 20000) // 20 second max loading time
 
       loadImages().finally(() => {
         clearTimeout(loadTimeout)

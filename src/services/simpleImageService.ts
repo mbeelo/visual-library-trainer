@@ -56,11 +56,11 @@ export class SimpleImageService {
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => {
             console.log(`⏱️ Bulk query timeout reached on attempt ${attempt}!`)
-            reject(new Error(`Bulk query timeout after 10 seconds (attempt ${attempt})`))
-          }, 10000)
+            reject(new Error(`Bulk query timeout after 20 seconds (attempt ${attempt})`))
+          }, 20000)
         })
 
-        console.log(`🔍 Executing bulk query with timeout (attempt ${attempt})...`)
+        console.log(`🔍 Executing bulk query with 20s timeout (attempt ${attempt})...`)
         const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any
 
         console.log(`📊 Bulk Supabase query completed (attempt ${attempt}):`, { error, count: data?.length || 0 })
@@ -118,64 +118,54 @@ export class SimpleImageService {
       return []
     }
 
-    try {
-      console.log('🚀 Starting Supabase query...')
+    // Retry logic for reliability
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        console.log(`🚀 Starting Supabase query (attempt ${attempt}/2)...`)
 
-      // Skip auth check for now since it's hanging - just try the query directly
-      console.log('🔍 Skipping auth check, attempting direct query...')
-
-      // Emergency performance fix: Only do debug on first call
-      if (subject === 'Chair') {
-        console.log('🔍 Debug: Checking all user data in image_collections...')
-        const debugPromise = supabase
+        const queryPromise = supabase
           .from('image_collections')
-          .select('drawing_subject, image_url')
+          .select('*')
           .eq('user_id', userId)
-          .limit(20)
+          .eq('drawing_subject', subject)
+          .order('position', { ascending: true })
 
-        try {
-          const debugUser = await debugPromise
-          console.log('🔍 All saved subjects for user:', debugUser.data?.map(d => d.drawing_subject))
-        } catch (debugError) {
-          console.log('🔍 Debug queries failed:', debugError)
+        // More reasonable 15-second timeout
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => {
+            console.log(`⏱️ Query timeout reached on attempt ${attempt}!`)
+            reject(new Error(`Query timeout after 15 seconds (attempt ${attempt})`))
+          }, 15000)
+        })
+
+        console.log(`🔍 Executing query with 15s timeout (attempt ${attempt})...`)
+        const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any
+
+        console.log(`📊 Query completed (attempt ${attempt}):`, { error, count: data?.length || 0 })
+
+        if (error) {
+          console.error(`❌ Error fetching images (attempt ${attempt}):`, error)
+          if (attempt === 2) return [] // Last attempt failed
+          continue // Try again
         }
+
+        const result = data || []
+        console.log(`✅ SimpleImageService.getImages success (attempt ${attempt}):`, result.length, 'images')
+        return result
+      } catch (err) {
+        console.error(`💥 Exception in getImages (attempt ${attempt}):`, err)
+        if (err instanceof Error && err.message.includes('timeout')) {
+          console.error(`⏱️ Query timed out on attempt ${attempt}`)
+        }
+        if (attempt === 2) {
+          console.error('🚨 All retry attempts failed - returning empty array')
+          return []
+        }
+        // Continue to next attempt
       }
-
-      // Create a simple timeout
-      const queryPromise = supabase
-        .from('image_collections')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('drawing_subject', subject)
-        .order('position', { ascending: true })
-
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          console.log('⏱️ Query timeout reached!')
-          reject(new Error('Query timeout after 3 seconds'))
-        }, 3000)
-      })
-
-      console.log('🔍 Executing query with timeout...')
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any
-
-      console.log('📊 Supabase query completed:', { data, error, count: data?.length || 0 })
-
-      if (error) {
-        console.error('❌ Error fetching images:', error)
-        return []
-      }
-
-      const result = data || []
-      console.log('✅ SimpleImageService.getImages returning:', result.length, 'images')
-      return result
-    } catch (err) {
-      console.error('💥 Exception in getImages:', err)
-      if (err instanceof Error && err.message.includes('timeout')) {
-        console.error('⏱️ Query timed out - returning empty array to prevent UI hang')
-      }
-      return []
     }
+
+    return []
   }
 
   // Upload file to Supabase Storage and return public URL
@@ -276,7 +266,7 @@ export class SimpleImageService {
         .limit(1)
 
       const positionTimeout = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Position query timeout')), 5000)
+        setTimeout(() => reject(new Error('Position query timeout')), 10000)
       })
 
       const { data: existingImages, error: positionError } = await Promise.race([positionPromise, positionTimeout]) as any
@@ -302,7 +292,7 @@ export class SimpleImageService {
         .eq('image_url', imageInput.image_url)
 
       const duplicateTimeout = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Duplicate check timeout')), 5000)
+        setTimeout(() => reject(new Error('Duplicate check timeout')), 10000)
       })
 
       const { data: duplicateCheck, error: duplicateError } = await Promise.race([duplicatePromise, duplicateTimeout]) as any
@@ -335,7 +325,7 @@ export class SimpleImageService {
         .single()
 
       const insertTimeout = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Insert timeout')), 10000)
+        setTimeout(() => reject(new Error('Insert timeout')), 15000)
       })
 
       const { data, error } = await Promise.race([insertPromise, insertTimeout]) as any
