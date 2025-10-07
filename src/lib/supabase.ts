@@ -14,7 +14,10 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    storage: window.localStorage,
+    storageKey: 'sb-afterimage-auth-token',
+    flowType: 'pkce'
   },
   global: {
     headers: {

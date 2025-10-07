@@ -28,6 +28,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'pro'>('free')
 
   useEffect(() => {
+    console.log('🔵 AuthProvider mounting, checking session...')
+
     // Clean stale auth tokens from URL before processing session
     if (window.location.hash && window.location.hash.includes('access_token')) {
       // Check if tokens are stale (older than 2 minutes)
@@ -42,26 +44,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // If tokens expire in less than 2 minutes, they're likely stale
         if (timeUntilExpiry < 120000) {
-          console.log('Cleaning stale auth tokens from URL')
+          console.log('🔵 Cleaning stale auth tokens from URL')
           window.history.replaceState({}, '', window.location.pathname)
         }
       }
     }
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchUserProfile(session.user.id)
+    // Get initial session with error handling
+    const initializeAuth = async () => {
+      try {
+        console.log('🔵 Getting initial session...')
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        if (error) {
+          console.error('🔴 Error getting session:', error)
+          setLoading(false)
+          return
+        }
+
+        console.log('🔵 Initial session:', session?.user?.email || 'no session')
+        setUser(session?.user ?? null)
+
+        if (session?.user) {
+          await fetchUserProfile(session.user.id)
+        }
+        setLoading(false)
+      } catch (error) {
+        console.error('🔴 Exception during auth initialization:', error)
+        setLoading(false)
       }
-      setLoading(false)
-    })
+    }
+
+    initializeAuth()
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔴 Auth state change:', event, session?.user?.email || 'no user')
+      console.log('🔵 Auth state change:', event, session?.user?.email || 'no user')
+
+      // Special handling for SIGNED_OUT to prevent loops
+      if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setSubscriptionTier('free')
+        setLoading(false)
+        return
+      }
+
       setUser(session?.user ?? null)
       if (session?.user) {
         await fetchUserProfile(session.user.id)
@@ -170,7 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Preserve user's practice data (vlt-history, vlt-ratings, vlt-custom-lists, etc.)
       const keys = Object.keys(localStorage)
       keys.forEach(key => {
-        if (key.startsWith('sb-') && key.includes('auth-token')) {
+        if (key.startsWith('sb-') || key.includes('afterimage-auth')) {
           localStorage.removeItem(key)
           console.log('🔴 Removed Supabase auth token:', key)
         }
