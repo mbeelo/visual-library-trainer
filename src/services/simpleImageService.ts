@@ -166,7 +166,14 @@ export class SimpleImageService {
 
       if (error) {
         console.error('❌ Supabase error:', error)
-        console.log('🚨 Falling back to localStorage due to Supabase error')
+
+        // Handle specific error cases
+        if (error.code === 'PGRST205' || error.message?.includes('table') || error.message?.includes('Invalid API key')) {
+          console.log('🚨 Database/table missing - using localStorage fallback mode')
+        } else {
+          console.log('🚨 Falling back to localStorage due to Supabase error')
+        }
+
         return this.getFallbackImages(userId, subject)
       }
 

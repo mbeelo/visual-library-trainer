@@ -121,6 +121,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Error checking user lists:', error)
+
+        // If the table doesn't exist, gracefully continue without database lists
+        if (error.code === 'PGRST205' || error.message?.includes('table')) {
+          console.log('📦 Database tables not available - using localStorage mode')
+          return
+        }
         return
       }
 

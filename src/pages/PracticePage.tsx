@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import DrawingPhase from '../components/DrawingPhase'
 import ReferencePhase from '../components/ReferencePhase'
@@ -43,6 +43,24 @@ export function PracticePage() {
   const allLists = [defaultList, ...communityLists, ...customLists]
   const activeListId = listId || settings.activeListId
   const activeList = allLists.find(list => list.id === activeListId) || defaultList
+
+  // FALLBACK: If no listId in URL but we have a subject, try to find which list contains it
+  const fallbackListId = useMemo(() => {
+    if (listId) return listId // URL has list ID, use it
+    if (subject && currentItem) {
+      // Find which list contains this subject
+      for (const list of allLists) {
+        const allItems = Object.values(list.categories).flat()
+        if (allItems.includes(currentItem)) {
+          console.log(`📍 Found subject "${currentItem}" in list: ${list.id}`)
+          return list.id
+        }
+      }
+    }
+    return settings.activeListId // Default fallback
+  }, [listId, subject, currentItem, allLists, settings.activeListId])
+
+  const finalActiveList = allLists.find(list => list.id === fallbackListId) || defaultList
 
   const [selectedTimerPreset] = useState<TimerPreset>(
     () => timerPresets.find(p => p.duration === settings.defaultTimerDuration) || timerPresets[3]
@@ -184,7 +202,7 @@ export function PracticePage() {
         <ReferencePhase
           currentItem={currentItem}
           currentCategory={currentCategory}
-          listId={activeListId}
+          listId={fallbackListId}
           timer={timer}
           onCompleteWithRating={(rating) => {
             // Save the rating but don't auto-advance
