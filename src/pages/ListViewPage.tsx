@@ -51,14 +51,14 @@ export function ListViewPage() {
       items.includes(randomSubject)
     )?.[0] || 'General'
 
-    navigate(`/app/practice/${encodeURIComponent(randomSubject)}?category=${encodeURIComponent(category)}`)
+    navigate(`/app/practice/${currentList.id}/${encodeURIComponent(randomSubject)}?category=${encodeURIComponent(category)}`)
   }
 
   const handlePracticeSubject = (subject: string, category: string) => {
     // Set as active list
     setSettings(prev => ({ ...prev, activeListId: currentList.id }))
 
-    navigate(`/app/practice/${encodeURIComponent(subject)}?category=${encodeURIComponent(category)}`)
+    navigate(`/app/practice/${currentList.id}/${encodeURIComponent(subject)}?category=${encodeURIComponent(category)}`)
   }
 
   return (

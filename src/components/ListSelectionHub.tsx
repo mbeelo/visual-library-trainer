@@ -64,7 +64,7 @@ export function ListSelectionHub({
     const firstCategory = categories[0]
     const firstItem = list.categories[firstCategory][0]
 
-    navigate(`/app/practice/${encodeURIComponent(firstItem)}?category=${encodeURIComponent(firstCategory)}`)
+    navigate(`/app/practice/${list.id}/${encodeURIComponent(firstItem)}?category=${encodeURIComponent(firstCategory)}`)
   }
 
   const featuredLists = allLists.filter(list => !list.isCustom).slice(0, 3)

@@ -67,7 +67,7 @@ export function VisualLibraryHub({
     const firstCategory = categories[0]
     const firstItem = list.categories[firstCategory][0]
 
-    navigate(`/app/practice/${encodeURIComponent(firstItem)}?category=${encodeURIComponent(firstCategory)}`)
+    navigate(`/app/practice/${list.id}/${encodeURIComponent(firstItem)}?category=${encodeURIComponent(firstCategory)}`)
   }
 
   const featuredLists = allLists.filter(list => !list.isCustom).slice(0, 3)
@@ -97,7 +97,7 @@ export function VisualLibraryHub({
                 if (firstList && firstCategory) {
                   const firstItem = firstList.categories[firstCategory][0]
                   onSelectList(firstList)
-                  navigate(`/app/practice/${encodeURIComponent(firstItem)}?category=${encodeURIComponent(firstCategory)}`)
+                  navigate(`/app/practice/${firstList.id}/${encodeURIComponent(firstItem)}?category=${encodeURIComponent(firstCategory)}`)
                 }
               }}
               className="bg-orange-400 hover:bg-orange-500 text-slate-900 font-bold text-xl px-12 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl hover:shadow-orange-500/25 transform hover:scale-105"
