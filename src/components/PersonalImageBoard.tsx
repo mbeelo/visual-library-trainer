@@ -5,12 +5,14 @@ import { useAuth } from '../contexts/AuthContext'
 
 interface PersonalImageBoardProps {
   drawingSubject: string
+  listId: string
   onImageCountChange: (count: number) => void
   refreshKey?: number // Add refresh key to force reloading
 }
 
 export function PersonalImageBoard({
   drawingSubject,
+  listId,
   onImageCountChange,
   refreshKey
 }: PersonalImageBoardProps) {
@@ -56,7 +58,7 @@ export function PersonalImageBoard({
       setImages([])
       onImageCountChange(0)
     }
-  }, [user?.id, drawingSubject, refreshKey]) // Include refreshKey to force reloads
+  }, [user?.id, drawingSubject, listId, refreshKey]) // Include listId and refreshKey to force reloads
 
   // Keyboard navigation for expanded image
   useEffect(() => {
@@ -97,8 +99,8 @@ export function PersonalImageBoard({
       }
 
       // Load images using simple service
-      console.log('📡 Fetching images for:', drawingSubject, 'user:', user.id)
-      const data = await SimpleImageService.getImages(drawingSubject, user.id)
+      console.log('📡 Fetching images for:', drawingSubject, 'list:', listId, 'user:', user.id)
+      const data = await SimpleImageService.getImages(drawingSubject, listId, user.id)
       console.log('📸 Loaded images from database:', data.length, 'images')
 
       setImages(data)

@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback } from 'react';
 interface ReferencePhaseProps {
   currentItem: string | null;
   currentCategory: string | null;
+  listId: string;
   timer: number;
   onCompleteWithRating: (rating: Rating) => void;
   onRepeatItem?: () => void;
@@ -27,6 +28,7 @@ interface ReferencePhaseProps {
 export default function ReferencePhase({
   currentItem,
   currentCategory,
+  listId,
   onCompleteWithRating,
   onRepeatItem,
   onNextItem,
@@ -72,6 +74,7 @@ export default function ReferencePhase({
     try {
       const allowed = await SimpleImageService.canAddImage(
         currentItem,
+        listId,
         subscriptionTier,
         user?.id || ''
       );
@@ -155,6 +158,7 @@ export default function ReferencePhase({
 
         <PersonalImageBoard
           drawingSubject={currentItem || ''}
+          listId={listId}
           onImageCountChange={setImageCount}
           refreshKey={refreshKey}
         />
@@ -203,6 +207,7 @@ export default function ReferencePhase({
             {user ? (
               <ImageUrlInput
                 drawingSubject={currentItem || ''}
+                listId={listId}
                 onImageAdded={handleImageAdded}
                 canAddMore={canAddMore}
                 onUpgradeNeeded={handleUpgradeNeeded}
@@ -211,6 +216,7 @@ export default function ReferencePhase({
             ) : (
               <ImageUrlInput
                 drawingSubject={currentItem || ''}
+                listId={listId}
                 onImageAdded={handleImageAdded}
                 canAddMore={false}
                 onUpgradeNeeded={handleUpgradeNeeded}

@@ -141,11 +141,11 @@ export class SimpleImageService {
 
   // Get all images for a subject in a specific list
   static async getImages(subject: string, listId: string, userId: string): Promise<SimpleImage[]> {
-    console.log('🔍 SimpleImageService.getImages called with:', { subject, userId })
+    console.log('🔍 SimpleImageService.getImages called with:', { subject, listId, userId })
 
     // Validate inputs
-    if (!userId || !subject) {
-      console.error('❌ Missing required parameters:', { subject, userId })
+    if (!userId || !subject || !listId) {
+      console.error('❌ Missing required parameters:', { subject, listId, userId })
       return []
     }
 
@@ -244,8 +244,8 @@ export class SimpleImageService {
   }
 
   // Add image from file upload
-  static async addImageFromFile(subject: string, fileInput: SimpleImageFileInput, userId: string): Promise<SimpleImage> {
-    console.log('📁 addImageFromFile called with:', { subject, userId, fileName: fileInput.file.name })
+  static async addImageFromFile(subject: string, fileInput: SimpleImageFileInput, listId: string, userId: string): Promise<SimpleImage> {
+    console.log('📁 addImageFromFile called with:', { subject, listId, userId, fileName: fileInput.file.name })
 
     try {
       // Upload file and get URL
@@ -255,7 +255,7 @@ export class SimpleImageService {
       return await this.addImage(subject, {
         image_url: imageUrl,
         notes: fileInput.notes
-      }, userId)
+      }, listId, userId)
     } catch (err) {
       console.error('💥 Exception in addImageFromFile:', err)
       throw err
@@ -263,14 +263,15 @@ export class SimpleImageService {
   }
 
   // Add image (using existing image_collections table)
-  static async addImage(subject: string, imageInput: SimpleImageInput, userId: string): Promise<SimpleImage> {
-    console.log('🔧 addImage called with:', JSON.stringify({ subject, userId, imageInput }, null, 2))
+  static async addImage(subject: string, imageInput: SimpleImageInput, listId: string, userId: string): Promise<SimpleImage> {
+    console.log('🔧 addImage called with:', JSON.stringify({ subject, listId, userId, imageInput }, null, 2))
 
     try {
       console.log('🔧 Starting Supabase insert with 10 second timeout...')
 
       const insertData = {
         user_id: userId,
+        list_id: listId,
         drawing_subject: subject,
         image_url: imageInput.image_url,
         position: 0,
@@ -328,6 +329,7 @@ export class SimpleImageService {
       try {
         const fallbackImage = this.saveFallbackImage(userId, subject, {
           user_id: userId,
+          list_id: listId,
           drawing_subject: subject,
           image_url: imageInput.image_url,
           position: 0,
@@ -433,7 +435,7 @@ export class SimpleImageService {
   }
 
   // Check if user can add more images (free tier limit)
-  static async canAddImage(subject: string, subscriptionTier: 'free' | 'pro', userId: string): Promise<boolean> {
+  static async canAddImage(subject: string, listId: string, subscriptionTier: 'free' | 'pro', userId: string): Promise<boolean> {
     if (subscriptionTier === 'pro') {
       return true
     }
@@ -442,13 +444,14 @@ export class SimpleImageService {
       .from('image_collections')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
+      .eq('list_id', listId)
       .eq('drawing_subject', subject)
 
     if (error) {
       throw error
     }
 
-    return (count || 0) < 3 // Free tier limit: 3 images per subject
+    return (count || 0) < 3 // Free tier limit: 3 images per subject per list
   }
 
   // Validate image file

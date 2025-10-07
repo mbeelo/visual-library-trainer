@@ -10,7 +10,7 @@ import { generateNextChallenge } from '../utils/challengeGeneration'
 import { ProgressTrackingService } from '../services/progressTracking'
 
 export function PracticePage() {
-  const { subject } = useParams<{ subject: string }>()
+  const { subject, listId } = useParams<{ subject: string; listId?: string }>()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { showAuthModal, showUpgradeModal } = useModal()
@@ -39,9 +39,10 @@ export function PracticePage() {
     selectedAlgorithm: 'struggling-focus'
   })
 
-  // Get active training list
+  // Get active training list - use listId from URL if provided, otherwise use settings
   const allLists = [defaultList, ...communityLists, ...customLists]
-  const activeList = allLists.find(list => list.id === settings.activeListId) || defaultList
+  const activeListId = listId || settings.activeListId
+  const activeList = allLists.find(list => list.id === activeListId) || defaultList
 
   const [selectedTimerPreset] = useState<TimerPreset>(
     () => timerPresets.find(p => p.duration === settings.defaultTimerDuration) || timerPresets[3]
@@ -137,8 +138,11 @@ export function PracticePage() {
         trainingAlgorithms
       )
 
-      // Navigate to the new challenge
-      navigate(`/app/practice/${encodeURIComponent(challenge.item)}?category=${encodeURIComponent(challenge.category)}`)
+      // Navigate to the new challenge - include list context
+      const url = listId
+        ? `/app/practice/${listId}/${encodeURIComponent(challenge.item)}?category=${encodeURIComponent(challenge.category)}`
+        : `/app/practice/${encodeURIComponent(challenge.item)}?category=${encodeURIComponent(challenge.category)}`
+      navigate(url)
     } catch (error) {
       console.error('Error generating challenge:', error)
       // Fallback to dashboard
@@ -180,6 +184,7 @@ export function PracticePage() {
         <ReferencePhase
           currentItem={currentItem}
           currentCategory={currentCategory}
+          listId={activeListId}
           timer={timer}
           onCompleteWithRating={(rating) => {
             // Save the rating but don't auto-advance

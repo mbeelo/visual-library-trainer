@@ -44,7 +44,8 @@ export default function App() {
               <Route index element={<DashboardPage />} />
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="list/:listId" element={<ListViewPage />} />
-              <Route path="practice/:subject" element={<PracticePage />} />
+              <Route path="practice/:listId/:subject" element={<PracticePage />} />
+              <Route path="practice/:subject" element={<PracticePage />} /> {/* Legacy route for backward compatibility */}
               <Route path="create-list" element={<CreateListPage />} />
               <Route path="contact" element={<ContactPage />} />
 

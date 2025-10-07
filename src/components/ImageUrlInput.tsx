@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 
 interface ImageUrlInputProps {
   drawingSubject: string
+  listId: string
   onImageAdded: () => void
   canAddMore: boolean
   onUpgradeNeeded: () => void
@@ -84,6 +85,7 @@ const platformGuides: Record<Exclude<Platform, null>, PlatformGuide> = {
 
 export function ImageUrlInput({
   drawingSubject,
+  listId,
   onImageAdded,
   canAddMore,
   onUpgradeNeeded,
@@ -237,7 +239,7 @@ export function ImageUrlInput({
         result = await SimpleImageService.addImageFromFile(drawingSubject, {
           file: selectedFile,
           notes: notes.trim() || undefined
-        }, user.id)
+        }, listId, user.id)
       } else {
         console.log('💾 Attempting to save image URL with authenticated user:', {
           drawingSubject,
@@ -249,7 +251,7 @@ export function ImageUrlInput({
         result = await SimpleImageService.addImage(drawingSubject, {
           image_url: url.trim(),
           notes: notes.trim() || undefined
-        }, user.id)
+        }, listId, user.id)
       }
 
       console.log('✅ Image saved successfully:', result)
