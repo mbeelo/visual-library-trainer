@@ -202,6 +202,23 @@ export function ImageUrlInput({
       }
     }
 
+    // Check if user is authenticated before proceeding
+    if (!user) {
+      console.log('🚨 User not authenticated, triggering sign-in needed')
+      setError('Please sign in to save images to your collection')
+      if (onSignInNeeded) {
+        onSignInNeeded()
+      }
+      return
+    }
+
+    // Additional safety check for user ID
+    if (!user.id) {
+      console.error('🚨 User object exists but user.id is missing:', user)
+      setError('Authentication error: Invalid user ID')
+      return
+    }
+
     setIsLoading(true)
     setError('')
 
@@ -209,10 +226,11 @@ export function ImageUrlInput({
       let result
 
       if (uploadMode === 'file' && selectedFile) {
-        console.log('📁 Attempting to upload file:', {
+        console.log('📁 Attempting to upload file with authenticated user:', {
           drawingSubject,
           fileName: selectedFile.name,
           fileSize: selectedFile.size,
+          userId: user.id,
           notes: notes.trim() || undefined
         })
 
@@ -221,9 +239,10 @@ export function ImageUrlInput({
           notes: notes.trim() || undefined
         }, user.id)
       } else {
-        console.log('💾 Attempting to save image URL:', {
+        console.log('💾 Attempting to save image URL with authenticated user:', {
           drawingSubject,
           url: url.trim(),
+          userId: user.id,
           notes: notes.trim() || undefined
         })
 

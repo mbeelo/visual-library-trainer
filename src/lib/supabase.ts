@@ -1,35 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL
-const supabaseKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY
+// Use correct Vite environment variable access
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+
+console.log('🔧 Supabase client configuration:')
+console.log('  URL:', supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : 'MISSING')
+console.log('  Key:', supabaseKey ? `${supabaseKey.substring(0, 20)}...` : 'MISSING')
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  db: {
-    schema: 'public',
-  },
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    storage: window.localStorage,
-    storageKey: 'sb-afterimage-auth-token',
-    flowType: 'pkce'
-  },
-  global: {
-    headers: {
-      'x-my-custom-header': 'visual-library-trainer',
-    },
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
-    },
-  },
-})
+// Use minimal configuration following 2024 Vite React SPA best practices
+export const supabase = createClient(supabaseUrl, supabaseKey)
 
 export type Database = {
   public: {

@@ -28,32 +28,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'pro'>('free')
 
   useEffect(() => {
-    console.log('🔵 AuthProvider mounting, checking session...')
+    console.log('🔵 AuthProvider mounting, initializing auth state...')
 
-    // Clean stale auth tokens from URL before processing session
-    if (window.location.hash && window.location.hash.includes('access_token')) {
-      // Check if tokens are stale (older than 2 minutes)
-      const hash = window.location.hash
-      const params = new URLSearchParams(hash.substring(1))
-      const expiresAt = params.get('expires_at')
-
-      if (expiresAt) {
-        const expiryTime = parseInt(expiresAt) * 1000
-        const now = Date.now()
-        const timeUntilExpiry = expiryTime - now
-
-        // If tokens expire in less than 2 minutes, they're likely stale
-        if (timeUntilExpiry < 120000) {
-          console.log('🔵 Cleaning stale auth tokens from URL')
-          window.history.replaceState({}, '', window.location.pathname)
-        }
-      }
-    }
-
-    // Get initial session with error handling
+    // Get initial session with proper error handling
     const initializeAuth = async () => {
       try {
         console.log('🔵 Getting initial session...')
+
         const { data: { session }, error } = await supabase.auth.getSession()
 
         if (error) {
