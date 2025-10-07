@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 export interface SimpleImage {
   id: string
   user_id: string
+  list_id: string
   drawing_subject: string
   image_url: string
   position: number
@@ -138,8 +139,8 @@ export class SimpleImageService {
     }
   }
 
-  // Get all images for a subject (using existing image_collections table)
-  static async getImages(subject: string, userId: string): Promise<SimpleImage[]> {
+  // Get all images for a subject in a specific list
+  static async getImages(subject: string, listId: string, userId: string): Promise<SimpleImage[]> {
     console.log('🔍 SimpleImageService.getImages called with:', { subject, userId })
 
     // Validate inputs

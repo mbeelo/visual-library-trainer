@@ -33,18 +33,23 @@ export function PersonalImageBoard({
     console.log('🔄 PersonalImageBoard useEffect triggered, refreshKey:', refreshKey)
 
     if (user && drawingSubject) {
-      // Increased timeout for better reliability
-      const loadTimeout = setTimeout(() => {
-        console.log('⏱️ PersonalImageBoard: Loading timeout reached')
-        setLoading(false)
-        setIsRefreshing(false)
-      }, 20000) // 20 second max loading time
+      // Debounce rapid calls to prevent concurrent requests
+      const debounceTimeout = setTimeout(() => {
+        // Increased timeout for better reliability
+        const loadTimeout = setTimeout(() => {
+          console.log('⏱️ PersonalImageBoard: Loading timeout reached')
+          setLoading(false)
+          setIsRefreshing(false)
+        }, 20000) // 20 second max loading time
 
-      loadImages().finally(() => {
-        clearTimeout(loadTimeout)
-      })
+        loadImages().finally(() => {
+          clearTimeout(loadTimeout)
+        })
+      }, 100) // 100ms debounce
 
-      return () => clearTimeout(loadTimeout)
+      return () => {
+        clearTimeout(debounceTimeout)
+      }
     } else {
       // For non-authenticated users, set loading to false so they see the empty state
       setLoading(false)
@@ -74,6 +79,12 @@ export function PersonalImageBoard({
 
   const loadImages = async () => {
     if (!user) return
+
+    // Prevent concurrent requests
+    if (loading && !isRefreshing) {
+      console.log('🚫 Skipping loadImages - already loading')
+      return
+    }
 
     try {
       // Only show full loading state if we don't have images yet

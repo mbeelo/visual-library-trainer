@@ -174,7 +174,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name: list.name,
         items: Object.values(list.categories).flat(), // Flatten all categories into items array
         is_active: list.id === 'default', // Make default list active
-        created_at: new Date().toISOString()
+        is_custom: false, // Mark as curated list, not user-created
+        created_at: new Date().toISOString(),
+        // Store original metadata for reconstruction
+        original_id: list.id,
+        description: list.description,
+        creator: list.creator
       }))
 
       const { error } = await supabase
