@@ -99,12 +99,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (data) {
         setSubscriptionTier(data.subscription_tier)
+        // Check if user has curated lists, create if missing
+        await ensureUserCuratedLists(userId)
       } else {
         // Create user profile if it doesn't exist
         await createUserProfile(userId)
       }
     } catch (error) {
       console.error('Error in fetchUserProfile:', error)
+    }
+  }
+
+  const ensureUserCuratedLists = async (userId: string) => {
+    try {
+      // Check if user has any custom lists (including curated ones)
+      const { data, error } = await supabase
+        .from('custom_lists')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1)
+
+      if (error) {
+        console.error('Error checking user lists:', error)
+        return
+      }
+
+      // If no lists exist, create curated lists
+      if (!data || data.length === 0) {
+        console.log('🔄 No lists found for existing user, creating curated lists')
+        await createUserCuratedLists(userId)
+      }
+    } catch (error) {
+      console.error('Error in ensureUserCuratedLists:', error)
     }
   }
 
@@ -124,9 +150,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Error creating user profile:', error)
       } else {
         setSubscriptionTier('free')
+        // Create user-specific curated lists after profile creation
+        await createUserCuratedLists(userId)
       }
     } catch (error) {
       console.error('Error in createUserProfile:', error)
+    }
+  }
+
+  const createUserCuratedLists = async (userId: string) => {
+    try {
+      console.log('🏗️ Creating user-specific curated lists for:', userId)
+
+      // Import curated lists data
+      const { defaultList } = await import('../data/defaultList')
+      const { communityLists } = await import('../data/communityLists')
+
+      const allCuratedLists = [defaultList, ...communityLists]
+
+      // Create user-specific versions of each curated list
+      const userLists = allCuratedLists.map(list => ({
+        user_id: userId,
+        name: list.name,
+        items: Object.values(list.categories).flat(), // Flatten all categories into items array
+        is_active: list.id === 'default', // Make default list active
+        created_at: new Date().toISOString()
+      }))
+
+      const { error } = await supabase
+        .from('custom_lists')
+        .insert(userLists)
+
+      if (error) {
+        console.error('❌ Error creating curated lists for user:', error)
+      } else {
+        console.log('✅ Successfully created', userLists.length, 'curated lists for user')
+      }
+    } catch (error) {
+      console.error('💥 Exception in createUserCuratedLists:', error)
     }
   }
 
