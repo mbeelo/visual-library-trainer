@@ -142,7 +142,7 @@ export function Landing() {
             {/* Feature 2: Drawing Phase - Text Right, Screenshot Left */}
             <div className="grid lg:grid-cols-2 gap-16 items-center">
               {/* Mock Drawing Phase Screenshot */}
-              <div className="bg-slate-800 border border-orange-500/20 rounded-xl overflow-hidden shadow-2xl">
+              <div className="bg-slate-800 border border-orange-500/20 rounded-xl overflow-hidden shadow-2xl order-2 lg:order-1">
                 <div className="p-8">
                   <div className="text-center mb-6">
                     <div className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium border border-orange-400 text-orange-400 bg-transparent mb-4">
@@ -167,7 +167,7 @@ export function Landing() {
                 </div>
               </div>
 
-              <div>
+              <div className="order-1 lg:order-2">
                 <h2 className="text-4xl font-bold mb-6"><span className="text-orange-400">Draw</span> from memory first</h2>
                 <p className="text-xl text-slate-300 mb-8 leading-relaxed">
                   No cheating, no googling, no references. Just you and a blank canvas with a simple prompt.

@@ -15,6 +15,11 @@ export interface SimpleImageInput {
   notes?: string
 }
 
+export interface SimpleImageFileInput {
+  file: File
+  notes?: string
+}
+
 export class SimpleImageService {
   // Simple cache to prevent redundant bulk queries
   private static bulkCache: Map<string, { data: Record<string, SimpleImage[]>, timestamp: number }> = new Map()
@@ -173,6 +178,88 @@ export class SimpleImageService {
     }
   }
 
+  // Upload file to Supabase Storage and return public URL
+  static async uploadFile(file: File, userId: string, subject: string): Promise<string> {
+    console.log('📁 Starting file upload:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      userId,
+      subject
+    })
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif']
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('Invalid file type. Please upload JPEG, PNG, GIF, WebP, HEIC, or HEIF images.')
+    }
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    if (file.size > maxSize) {
+      throw new Error('File too large. Please upload images smaller than 10MB.')
+    }
+
+    try {
+      // Generate unique filename with timestamp and random suffix
+      const timestamp = Date.now()
+      const randomSuffix = Math.random().toString(36).substring(2, 8)
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+
+      // Convert HEIC/HEIF extensions to more compatible format for storage
+      const storageExt = (fileExt === 'heic' || fileExt === 'heif') ? 'jpg' : fileExt
+      const fileName = `${userId}/${subject}/${timestamp}_${randomSuffix}.${storageExt}`
+
+      console.log('📤 Uploading file to path:', fileName)
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('user-images')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) {
+        console.error('❌ Upload error:', error)
+        throw new Error(`Upload failed: ${error.message}`)
+      }
+
+      console.log('✅ File uploaded successfully:', data)
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('user-images')
+        .getPublicUrl(fileName)
+
+      console.log('🔗 Generated public URL:', urlData.publicUrl)
+
+      return urlData.publicUrl
+    } catch (err) {
+      console.error('💥 Exception in uploadFile:', err)
+      throw err
+    }
+  }
+
+  // Add image from file upload
+  static async addImageFromFile(subject: string, fileInput: SimpleImageFileInput, userId: string): Promise<SimpleImage> {
+    console.log('📁 addImageFromFile called with:', { subject, userId, fileName: fileInput.file.name })
+
+    try {
+      // Upload file and get URL
+      const imageUrl = await this.uploadFile(fileInput.file, userId, subject)
+
+      // Use existing addImage method with the generated URL
+      return await this.addImage(subject, {
+        image_url: imageUrl,
+        notes: fileInput.notes
+      }, userId)
+    } catch (err) {
+      console.error('💥 Exception in addImageFromFile:', err)
+      throw err
+    }
+  }
+
   // Add image (using existing image_collections table)
   static async addImage(subject: string, imageInput: SimpleImageInput, userId: string): Promise<SimpleImage> {
     console.log('🔧 addImage called with:', { subject, userId, imageInput })
@@ -316,6 +403,22 @@ export class SimpleImageService {
     }
 
     return (count || 0) < 3 // Free tier limit: 3 images per subject
+  }
+
+  // Validate image file
+  static validateImageFile(file: File): { valid: boolean; error?: string } {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif']
+    const maxSize = 10 * 1024 * 1024 // 10MB
+
+    if (!allowedTypes.includes(file.type)) {
+      return { valid: false, error: 'Invalid file type. Please upload JPEG, PNG, GIF, WebP, HEIC, or HEIF images.' }
+    }
+
+    if (file.size > maxSize) {
+      return { valid: false, error: 'File too large. Please upload images smaller than 10MB.' }
+    }
+
+    return { valid: true }
   }
 
   // Validate image URL (reuse from old service)
