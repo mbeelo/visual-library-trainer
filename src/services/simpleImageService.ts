@@ -84,71 +84,58 @@ export class SimpleImageService {
       return cached.data
     }
 
-    // Retry logic for better reliability
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        console.log(`🚀 Starting bulk Supabase query (attempt ${attempt}/2) for all user images...`)
+    try {
+      console.log('🚀 Starting optimized bulk Supabase query...')
 
-        const queryPromise = supabase
-          .from('image_collections')
-          .select('*')
-          .eq('user_id', userId)
-          .order('drawing_subject', { ascending: true })
-          .order('position', { ascending: true })
+      const queryPromise = supabase
+        .from('image_collections')
+        .select('*')
+        .eq('user_id', userId)
+        .order('drawing_subject', { ascending: true })
+        .order('position', { ascending: true })
 
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => {
-            console.log(`⏱️ Bulk query timeout reached on attempt ${attempt}!`)
-            reject(new Error(`Bulk query timeout after 20 seconds (attempt ${attempt})`))
-          }, 20000)
-        })
+      // Same reasonable timeout as individual queries
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          console.log('⏱️ Bulk query timeout reached after 10 seconds')
+          reject(new Error('Bulk query timeout after 10 seconds'))
+        }, 10000)
+      })
 
-        console.log(`🔍 Executing bulk query with 20s timeout (attempt ${attempt})...`)
-        const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any
 
-        console.log(`📊 Bulk Supabase query completed (attempt ${attempt}):`, { error, count: data?.length || 0 })
+      console.log('📊 Bulk Supabase query result:', { error, count: data?.length || 0 })
 
-        if (error) {
-          console.error(`❌ Error fetching all user images (attempt ${attempt}):`, error)
-          if (attempt === 2) return {} // Last attempt failed
-          continue // Try again
-        }
-
-        // Success! Group images by subject
-        const imagesBySubject: Record<string, SimpleImage[]> = {}
-        if (data) {
-          data.forEach((image: SimpleImage) => {
-            if (!imagesBySubject[image.drawing_subject]) {
-              imagesBySubject[image.drawing_subject] = []
-            }
-            imagesBySubject[image.drawing_subject].push(image)
-          })
-        }
-
-        console.log(`✅ SimpleImageService.getAllUserImages success on attempt ${attempt}:`, Object.keys(imagesBySubject).length, 'subjects with images')
-
-        // Cache the result
-        this.bulkCache.set(userId, {
-          data: imagesBySubject,
-          timestamp: Date.now()
-        })
-
-        return imagesBySubject
-      } catch (err) {
-        console.error(`💥 Exception in getAllUserImages (attempt ${attempt}):`, err)
-        if (err instanceof Error && err.message.includes('timeout')) {
-          console.error(`⏱️ Bulk query timed out after 10 seconds on attempt ${attempt}`)
-        }
-        if (attempt === 2) {
-          console.error('🚨 All retry attempts failed - returning empty object to prevent UI hang')
-          return {}
-        }
-        // Continue to next attempt
+      if (error) {
+        console.error('❌ Error fetching all user images:', error)
+        return {}
       }
-    }
 
-    // Should never reach here, but just in case
-    return {}
+      // Success! Group images by subject
+      const imagesBySubject: Record<string, SimpleImage[]> = {}
+      if (data) {
+        data.forEach((image: SimpleImage) => {
+          if (!imagesBySubject[image.drawing_subject]) {
+            imagesBySubject[image.drawing_subject] = []
+          }
+          imagesBySubject[image.drawing_subject].push(image)
+        })
+      }
+
+      console.log('✅ Bulk query success:', Object.keys(imagesBySubject).length, 'subjects with images')
+
+      // Cache the result
+      this.bulkCache.set(userId, {
+        data: imagesBySubject,
+        timestamp: Date.now()
+      })
+
+      return imagesBySubject
+    } catch (err) {
+      console.error('💥 Exception in getAllUserImages:', err)
+      console.log('🚨 Bulk query failed - returning empty object to prevent UI hang')
+      return {}
+    }
   }
 
   // Get all images for a subject (using existing image_collections table)
@@ -161,57 +148,35 @@ export class SimpleImageService {
       return []
     }
 
-    // Retry logic for reliability
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        console.log(`🚀 Starting Supabase query (attempt ${attempt}/2)...`)
+    console.log('📡 Querying image collections...')
 
-        const queryPromise = supabase
-          .from('image_collections')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('drawing_subject', subject)
-          .order('position', { ascending: true })
+    try {
+      const startTime = Date.now()
 
-        // More reasonable 15-second timeout
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => {
-            console.log(`⏱️ Query timeout reached on attempt ${attempt}!`)
-            reject(new Error(`Query timeout after 15 seconds (attempt ${attempt})`))
-          }, 15000)
-        })
+      const { data, error } = await supabase
+        .from('image_collections')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('drawing_subject', subject)
+        .order('position', { ascending: true })
 
-        console.log(`🔍 Executing query with 15s timeout (attempt ${attempt})...`)
-        const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any
+      const duration = Date.now() - startTime
+      console.log(`📊 Supabase query completed in ${duration}ms:`, { error, count: data?.length || 0 })
 
-        console.log(`📊 Query completed (attempt ${attempt}):`, { error, count: data?.length || 0 })
-
-        if (error) {
-          console.error(`❌ Error fetching images (attempt ${attempt}):`, error)
-          if (attempt === 2) return [] // Last attempt failed
-          continue // Try again
-        }
-
-        const result = data || []
-        console.log(`✅ SimpleImageService.getImages success (attempt ${attempt}):`, result.length, 'images')
-        return result
-      } catch (err) {
-        console.error(`💥 Exception in getImages (attempt ${attempt}):`, err)
-        if (err instanceof Error && err.message.includes('timeout')) {
-          console.error(`⏱️ Query timed out on attempt ${attempt}`)
-        }
-        if (attempt === 2) {
-          console.error('🚨 All Supabase attempts failed - falling back to localStorage')
-          const fallbackImages = this.getFallbackImages(userId, subject)
-          console.log(`📦 Fallback returned ${fallbackImages.length} images from localStorage`)
-          return fallbackImages
-        }
-        // Continue to next attempt
+      if (error) {
+        console.error('❌ Supabase error:', error)
+        console.log('🚨 Falling back to localStorage due to Supabase error')
+        return this.getFallbackImages(userId, subject)
       }
-    }
 
-    console.error('🚨 Unexpected: Reached end of getImages without result')
-    return []
+      const result = data || []
+      console.log(`✅ SimpleImageService.getImages success:`, result.length, 'images')
+      return result
+    } catch (err) {
+      console.error('💥 Exception in getImages:', err)
+      console.log('🚨 Falling back to localStorage due to exception')
+      return this.getFallbackImages(userId, subject)
+    }
   }
 
   // Upload file to Supabase Storage and return public URL
@@ -301,87 +266,37 @@ export class SimpleImageService {
     console.log('🔧 addImage called with:', { subject, userId, imageInput })
 
     try {
-      // Get next position with timeout
-      console.log('🔍 Getting next position...')
-      const positionPromise = supabase
-        .from('image_collections')
-        .select('position')
-        .eq('user_id', userId)
-        .eq('drawing_subject', subject)
-        .order('position', { ascending: false })
-        .limit(1)
+      console.log('🔧 Starting RAW Supabase insert (no timeout)...')
 
-      const positionTimeout = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Position query timeout')), 10000)
-      })
-
-      const { data: existingImages, error: positionError } = await Promise.race([positionPromise, positionTimeout]) as any
-
-      if (positionError) {
-        console.error('❌ Error getting position:', positionError)
-        throw positionError
-      }
-
-      const nextPosition = existingImages && existingImages.length > 0
-        ? existingImages[0].position + 1
-        : 0
-
-      console.log('📍 Next position:', nextPosition)
-
-      // Check for duplicates with timeout
-      console.log('🔍 Checking for duplicates...')
-      const duplicatePromise = supabase
-        .from('image_collections')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('drawing_subject', subject)
-        .eq('image_url', imageInput.image_url)
-
-      const duplicateTimeout = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Duplicate check timeout')), 10000)
-      })
-
-      const { data: duplicateCheck, error: duplicateError } = await Promise.race([duplicatePromise, duplicateTimeout]) as any
-
-      if (duplicateError) {
-        console.error('❌ Error checking duplicates:', duplicateError)
-        throw duplicateError
-      }
-
-      if (duplicateCheck && duplicateCheck.length > 0) {
-        console.log('❌ Duplicate image found')
-        throw new Error('This image is already in your collection')
-      }
-
-      // Insert new image with timeout
-      console.log('💾 Inserting new image...')
       const insertData = {
         user_id: userId,
         drawing_subject: subject,
         image_url: imageInput.image_url,
-        position: nextPosition,
+        position: 0,
         notes: imageInput.notes || null
       }
       console.log('📝 Insert data:', insertData)
 
-      const insertPromise = supabase
+      const startTime = Date.now()
+
+      // Use exact same pattern as working isolated test
+      const result = await supabase
         .from('image_collections')
         .insert([insertData])
         .select()
         .single()
 
-      const insertTimeout = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Insert timeout')), 15000)
-      })
+      const duration = Date.now() - startTime
+      console.log(`📊 RAW insert completed in ${duration}ms`)
 
-      const { data, error } = await Promise.race([insertPromise, insertTimeout]) as any
+      const { data, error } = result
 
       if (error) {
         console.error('❌ Error adding image:', error)
         throw error
       }
 
-      console.log('✅ Image added successfully:', data)
+      console.log('✅ Image added successfully to Supabase:', data)
 
       // Invalidate cache when image is added
       this.bulkCache.delete(userId)
@@ -396,7 +311,7 @@ export class SimpleImageService {
           user_id: userId,
           drawing_subject: subject,
           image_url: imageInput.image_url,
-          position: 0, // Will be overridden by localStorage logic
+          position: 0,
           notes: imageInput.notes || null
         })
 
@@ -414,18 +329,75 @@ export class SimpleImageService {
 
   // Remove image
   static async removeImage(imageId: string): Promise<void> {
-    const { error } = await supabase
-      .from('image_collections')
-      .delete()
-      .eq('id', imageId)
+    console.log('🗑️ Removing image:', imageId)
 
-    if (error) {
-      console.error('Error removing image:', error)
-      throw error
+    try {
+      console.log('🗑️ Starting optimized Supabase delete...')
+
+      const deletePromise = supabase
+        .from('image_collections')
+        .delete()
+        .eq('id', imageId)
+
+      // Reasonable timeout for delete operations
+      const deleteTimeout = new Promise((_, reject) => {
+        setTimeout(() => {
+          console.log('⏱️ Delete timeout reached after 10 seconds')
+          reject(new Error('Delete timeout after 10 seconds'))
+        }, 10000)
+      })
+
+      const { error } = await Promise.race([deletePromise, deleteTimeout]) as any
+
+      if (error) {
+        console.error('❌ Error removing image from Supabase:', error)
+        throw error
+      }
+
+      console.log('✅ Image removed successfully from Supabase')
+
+      // Invalidate cache when image is removed
+      this.bulkCache.clear()
+    } catch (err) {
+      console.error('💥 Exception in removeImage:', err)
+      console.log('🚨 Supabase delete failed - falling back to localStorage removal')
+
+      try {
+        // Remove from localStorage as fallback
+        const stored = localStorage.getItem(this.FALLBACK_KEY)
+        if (stored) {
+          const data = JSON.parse(stored)
+
+          // Find and remove the image from localStorage
+          let found = false
+          for (const userId in data) {
+            for (const subject in data[userId]) {
+              const images = data[userId][subject]
+              const index = images.findIndex((img: SimpleImage) => img.id === imageId)
+              if (index !== -1) {
+                images.splice(index, 1)
+                found = true
+                break
+              }
+            }
+            if (found) break
+          }
+
+          if (found) {
+            localStorage.setItem(this.FALLBACK_KEY, JSON.stringify(data))
+            console.log('✅ Image removed from localStorage fallback')
+          } else {
+            console.log('⚠️ Image not found in localStorage fallback')
+          }
+        }
+
+        // Invalidate cache when image is removed
+        this.bulkCache.clear()
+      } catch (fallbackErr) {
+        console.error('💥 Even localStorage fallback failed:', fallbackErr)
+        throw err // Throw original Supabase error
+      }
     }
-
-    // Invalidate all cache when image is removed (we don't know which user it belonged to)
-    this.bulkCache.clear()
   }
 
   // Update image notes

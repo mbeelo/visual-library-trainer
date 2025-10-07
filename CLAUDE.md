@@ -175,24 +175,28 @@ Users can create custom training lists with:
 
 #### Database Architecture
 
-**Dual Database Approach:**
-- **Supabase**: Primary database with authentication and real-time features
-- **Drizzle ORM**: Type-safe database operations and migrations
+**Simplified Supabase Approach (2024 Best Practices):**
+- **Primary**: Supabase client with minimal configuration for optimal performance
+- **Deprecated**: Drizzle ORM (files disabled: `src/lib/db.ts.disabled`, `src/lib/schema.ts.disabled`)
 
-**Schema** (managed via `src/lib/schema.ts`):
+**Current Schema** (directly managed in Supabase):
 ```sql
 users (id, email, subscription_tier, created_at)
-subject_boards (id, user_id, drawing_subject, created_at, updated_at)
-board_images (id, board_id, image_url, notes, position, created_at)
+image_collections (id, user_id, drawing_subject, image_url, position, notes, created_at)
 practice_sessions (id, user_id, subject, duration, rating, images_used, created_at)
 custom_lists (id, user_id, name, items, is_active, created_at)
 ```
 
-**Configuration:**
-- `drizzle.config.ts` - Drizzle Kit configuration
-- `src/lib/db.ts` - Drizzle database client
-- `src/lib/supabase.ts` - Supabase client
-- Environment variable: `DATABASE_URL`
+**Critical Configuration:**
+- `src/lib/supabase.ts` - Minimal 2024 Supabase client (essential for performance)
+- `src/vite-env.d.ts` - TypeScript environment variable definitions (required for Vite)
+- Environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+
+**⚠️ Authentication & RLS Requirements:**
+- **Row Level Security (RLS)** is ACTIVE on all tables - this is critical for security
+- **INSERT operations REQUIRE authenticated users** - unauthenticated attempts will hang/fail
+- **Always check user authentication** before database operations in components
+- **Performance**: With proper auth, operations complete in ~250-300ms
 
 #### Implementation Phases
 1. **Phase 1:** Auth + basic image saving + payments (current implementation)
@@ -307,10 +311,11 @@ Key-based access system (`after_image_2025`) with comprehensive analytics:
 
 ### **Service Layer Patterns**
 Business logic organized by domain:
+- `simpleImageService.ts` - **Primary image service** with authentication-aware operations
 - `progressTracking.ts` - Analytics, streaks, performance metrics
 - `dataMigration.ts` - localStorage to cloud migration patterns
-- `imageCollections.ts` - Pinterest-style board management
-- Error handling with timeouts, retries, graceful degradation
+- `imageCollections.ts` - Legacy Pinterest-style board management (deprecated)
+- Error handling with timeouts, retries, graceful degradation, localStorage fallbacks
 
 ### **Component Architecture Patterns**
 - **Page-based routing** (not component phases) for better SEO
@@ -343,7 +348,7 @@ npm run db:studio    # Visual database browser
 - **Practice algorithm**: `src/components/Dashboard.tsx` (generateChallenge)
 - **Timer system**: `src/pages/PracticePage.tsx` (dual timer logic)
 - **Admin dashboard**: `src/pages/AdminDashboard.tsx` (key: `after_image_2025`)
-- **Image collections**: `src/services/simpleImageService.ts` (Pinterest-style boards)
+- **Image collections**: `src/services/simpleImageService.ts` (Authentication-aware image management)
 - **Landing page**: `src/pages/Landing.tsx` (marketing homepage)
 - **Social media**: `index.html` (OG meta tags, afterimage.app domain)
 
@@ -394,3 +399,65 @@ This is a production-ready SaaS application with:
 2. **Payment Activation** - Enable Stripe integration when ready for subscriptions
 3. **Content Curation** - Add starter reference images for popular subjects
 4. **Performance Monitoring** - Add error tracking and user behavior analytics
+
+## Critical Debugging Insights
+
+### **Supabase Performance & Authentication Issues**
+
+**Common Issue**: INSERT operations hanging indefinitely
+**Root Cause**: Unauthenticated users triggering Row Level Security (RLS) violations
+**Solution**: Always check `user` authentication before database operations
+
+**Debugging Pattern:**
+```typescript
+// ❌ BAD - Will hang if user is not authenticated
+await SimpleImageService.addImage(subject, imageInput, user.id)
+
+// ✅ GOOD - Check authentication first
+if (!user) {
+  setError('Please sign in to save images to your collection')
+  onSignInNeeded?.()
+  return
+}
+if (!user.id) {
+  setError('Authentication error: Invalid user ID')
+  return
+}
+await SimpleImageService.addImage(subject, imageInput, user.id)
+```
+
+**Browser Compatibility Notes:**
+- **Chrome**: Extensions may interfere with Supabase requests (ad blockers, privacy tools)
+- **Safari**: Cleaner environment, better for testing Supabase performance
+- **Performance**: With proper auth, expect 250-300ms response times
+
+**Key Files for Authentication:**
+- `src/components/ImageUrlInput.tsx` - Has proper auth checks implemented
+- `src/contexts/AuthContext.tsx` - Provides user state and authentication methods
+- `src/lib/supabase.ts` - Minimal client configuration (critical for performance)
+
+### **Authentication Flow Patterns**
+
+**Progressive Enhancement Strategy:**
+1. **Anonymous Usage**: Users can practice immediately without signing up
+2. **Value Demonstration**: Core features work with localStorage persistence
+3. **Upgrade Prompts**: When attempting cloud features (saving images), prompt for sign-in
+4. **Seamless Transition**: Data migration from localStorage to cloud after authentication
+
+**Component Authentication Pattern:**
+```typescript
+const { user } = useAuth()
+
+// Always check authentication before cloud operations
+if (!user) {
+  // Fallback to localStorage or prompt for sign-in
+  setError('Please sign in to save images to your collection')
+  if (onSignInNeeded) onSignInNeeded()
+  return
+}
+```
+
+**Service Layer Authentication:**
+- All services that interact with Supabase require `userId` parameter
+- Services include localStorage fallbacks for offline/unauthenticated scenarios
+- Performance optimizations include caching and timeout handling
