@@ -30,3 +30,17 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Debug and test files (added during debugging session)
+test-*.html
+debug-*.html
+diagnose-*.html
+*-diagnostic*.js
+*-diagnostic*.sql
+check-*.sql
+clear-*.sql
+correct-*.sql
+database-*.sql
+supabase-diagnostic.js
+src/components/DebugInsert.tsx
+src/lib/*.disabled

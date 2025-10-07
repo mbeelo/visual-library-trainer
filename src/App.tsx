@@ -7,7 +7,6 @@ import { Landing, DashboardPage, PracticePage, CreateListPage, ListViewPage, Acc
 import { TermsPage } from './pages/TermsPage'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { AdminDashboard } from './pages/AdminDashboard'
-import { DebugInsert } from './components/DebugInsert'
 
 // Account-only routes that require full auth
 function AuthRequiredRoute({ children }: { children: React.ReactNode }) {
@@ -39,7 +38,6 @@ export default function App() {
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/debug-insert" element={<DebugInsert />} />
 
             {/* App routes - free to use, auth happens at feature level */}
             <Route path="/app" element={<Layout />}>
