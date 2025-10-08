@@ -1,9 +1,6 @@
 import { Outlet, useNavigate } from 'react-router-dom'
 import { Eye } from 'lucide-react'
 import Header from './Header'
-import { defaultList, communityLists } from '../data'
-import { useLocalStorage } from '../hooks'
-import { TrainingList } from '../types'
 import { useState, useEffect } from 'react'
 import Toast from './Toast'
 import { AuthModal } from './AuthModal'
@@ -14,10 +11,6 @@ import { useAuth } from '../contexts/AuthContext'
 export function Layout() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [customLists] = useLocalStorage<TrainingList[]>('vlt-custom-lists', [])
-  const [settings, setSettings] = useLocalStorage('vlt-settings', {
-    activeListId: defaultList.id
-  })
 
   const [authModal, setAuthModal] = useState<{
     isOpen: boolean
@@ -42,13 +35,6 @@ export function Layout() {
     isVisible: false
   })
 
-  const allLists = [defaultList, ...communityLists, ...customLists]
-  const activeList = allLists.find(list => list.id === settings.activeListId) || defaultList
-
-  const setActiveList = (list: TrainingList) => {
-    setSettings(prev => ({ ...prev, activeListId: list.id }))
-    showToast(`Switched to "${list.name}"`, 'success')
-  }
 
   const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'success') => {
     setToast({ message, type, isVisible: true })
@@ -62,9 +48,6 @@ export function Layout() {
     <div className="min-h-screen bg-slate-900 p-6">
       <div className="max-w-6xl mx-auto">
         <Header
-          activeList={activeList}
-          allLists={allLists}
-          onSetActiveList={setActiveList}
           onNavigateHome={() => navigate('/app/dashboard')}
           onShowAuth={(mode: 'signin' | 'signup') => setAuthModal({ isOpen: true, mode })}
         />

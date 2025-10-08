@@ -1,22 +1,15 @@
 import { LogOut, Flame, Eye, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { TrainingList } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { ProgressTrackingService } from '../services/progressTracking';
 import { useState, useEffect } from 'react';
 
 interface HeaderProps {
-  activeList: TrainingList;
-  allLists: TrainingList[];
-  onSetActiveList: (list: TrainingList) => void;
   onNavigateHome?: () => void;
   onShowAuth?: (mode: 'signin' | 'signup') => void;
 }
 
 export default function Header({
-  activeList,
-  allLists,
-  onSetActiveList,
   onNavigateHome,
   onShowAuth
 }: HeaderProps) {
@@ -50,24 +43,6 @@ export default function Header({
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-4">
-          {/* Training List Selector */}
-          <select
-            className="px-2 py-1 border border-orange-400 text-orange-400 bg-transparent rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition-colors"
-            value={activeList.id}
-            onChange={(e) => {
-              const selectedList = allLists.find(list => list.id === e.target.value);
-              if (selectedList) {
-                onSetActiveList(selectedList);
-              }
-            }}
-          >
-            {allLists.map(list => (
-              <option key={list.id} value={list.id} className="bg-slate-800 text-white">
-                {list.name}
-              </option>
-            ))}
-          </select>
-
           {/* Streak Indicator */}
           {currentStreak > 0 && (
             <div className="flex items-center gap-2 px-2 py-1 border border-orange-400 text-orange-400 bg-transparent rounded-lg text-xs font-medium">
@@ -137,27 +112,6 @@ export default function Header({
       {isMobileMenuOpen && (
         <div className="md:hidden mb-4">
           <div className="bg-slate-800 border border-orange-500/20 rounded-lg p-4 space-y-4">
-            {/* Training List Selector */}
-            <div>
-              <label className="block text-sm font-medium text-orange-400 mb-2">Training List</label>
-              <select
-                className="w-full px-3 py-2 border border-orange-400 text-orange-400 bg-slate-800 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition-colors"
-                value={activeList.id}
-                onChange={(e) => {
-                  const selectedList = allLists.find(list => list.id === e.target.value);
-                  if (selectedList) {
-                    onSetActiveList(selectedList);
-                  }
-                }}
-              >
-                {allLists.map(list => (
-                  <option key={list.id} value={list.id} className="bg-slate-800 text-white">
-                    {list.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {/* Streak Indicator */}
             {currentStreak > 0 && (
               <div className="flex items-center justify-center gap-2 px-3 py-2 border border-orange-400 text-orange-400 bg-transparent rounded-lg text-sm font-medium">

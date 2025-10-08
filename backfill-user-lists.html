@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backfill User Curated Lists</title>
+</head>
+<body>
+    <h1>Backfill Curated Lists for Existing User</h1>
+
+    <div id="auth-section">
+        <h2>Sign In First</h2>
+        <input type="email" id="email" placeholder="Email" value="mebako96@gmail.com">
+        <input type="password" id="password" placeholder="Password" value="password123">
+        <button id="signin-btn">Sign In</button>
+    </div>
+
+    <div id="backfill-section" style="display: none;">
+        <h2>Create Curated Lists</h2>
+        <button id="backfill-btn">Create My Curated Lists</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2'
+
+        const supabaseUrl = 'https://bcdmydwsoxpzhntyiuxf.supabase.co'
+        const supabaseKey = 'sb_publishable_Vicu7_LtKedwD-5mJE9sXA_aTwZdk1G'
+
+        const supabase = createClient(supabaseUrl, supabaseKey)
+
+        const log = (message) => {
+            console.log(message)
+            document.getElementById('results').innerHTML += '<div>' + JSON.stringify(message, null, 2) + '</div>'
+        }
+
+        // Curated lists data (copied from your codebase)
+        const defaultList = {
+            id: 'default',
+            name: 'Visual Basics',
+            description: 'Essential subjects every artist should master',
+            creator: 'Visual Library',
+            categories: {
+                'Basic Shapes': ['cube', 'sphere', 'cylinder', 'cone', 'pyramid'],
+                'Nature Elements': ['tree', 'rock', 'cloud', 'water', 'leaf'],
+                'Human Features': ['eye', 'hand', 'nose', 'ear', 'mouth'],
+                'Animals': ['cat', 'dog', 'bird', 'fish', 'horse'],
+                'Objects': ['apple', 'chair', 'bottle', 'book', 'shoe']
+            }
+        }
+
+        const communityLists = [
+            {
+                id: 'character-essentials',
+                name: 'Character Essentials',
+                description: 'Master the fundamentals of character design',
+                creator: 'Character Artist',
+                categories: {
+                    'Vehicles': ['sports car', 'motorcycle', 'bicycle', 'truck', 'airplane'],
+                    'Facial Expressions': ['smile', 'frown', 'surprise', 'anger', 'sadness'],
+                    'Body Poses': ['standing', 'sitting', 'running', 'jumping', 'dancing'],
+                    'Clothing': ['t-shirt', 'jeans', 'dress', 'hat', 'shoes'],
+                    'Hair Styles': ['curly hair', 'straight hair', 'ponytail', 'braids', 'short hair']
+                }
+            },
+            {
+                id: 'designers-toolkit',
+                name: "Designer's Toolkit",
+                description: 'Professional design elements and techniques',
+                creator: 'Design Studio',
+                categories: {
+                    'Architecture': ['house', 'building', 'bridge', 'tower', 'window'],
+                    'Interior Design': ['sofa', 'lamp', 'table', 'bed', 'plant'],
+                    'Tools': ['pencil', 'brush', 'ruler', 'scissors', 'hammer'],
+                    'Technology': ['computer', 'phone', 'camera', 'headphones', 'watch'],
+                    'Food Items': ['pizza', 'burger', 'coffee cup', 'wine glass', 'fruit bowl']
+                }
+            }
+        ]
+
+        async function backfillUserLists() {
+            log('🔍 Starting user curated lists backfill...')
+
+            try {
+                // Check if user is authenticated
+                const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+                if (authError || !user) {
+                    log('❌ User not authenticated. Please sign in first.')
+                    return
+                }
+
+                log(`✅ Authenticated as: ${user.email} (${user.id})`)
+
+                // Check if custom_lists table exists
+                const { data: existingLists, error: listError } = await supabase
+                    .from('custom_lists')
+                    .select('id, name, original_id')
+                    .eq('user_id', user.id)
+
+                if (listError) {
+                    if (listError.code === 'PGRST205') {
+                        log('❌ custom_lists table does not exist. You need to run the database migration first.')
+                        log('📋 Go to Supabase SQL Editor and run setup-complete-schema.sql')
+                        return
+                    }
+                    log('❌ Error checking existing lists:', listError)
+                    return
+                }
+
+                log(`📦 Found ${existingLists.length} existing lists for user`)
+
+                // Prepare all curated lists
+                const allCuratedLists = [defaultList, ...communityLists]
+                const listsToCreate = []
+
+                for (const list of allCuratedLists) {
+                    // Check if this curated list already exists for the user
+                    const existingList = existingLists.find(existing => existing.original_id === list.id)
+
+                    if (existingList) {
+                        log(`⏭️ List "${list.name}" already exists, skipping`)
+                        continue
+                    }
+
+                    // Create user-specific version of the curated list
+                    const userList = {
+                        user_id: user.id,
+                        name: list.name,
+                        items: Object.values(list.categories).flat(), // Flatten all categories into items array
+                        is_active: list.id === 'default', // Make default list active
+                        is_custom: false, // Mark as curated list, not user-created
+                        created_at: new Date().toISOString(),
+                        // Store original metadata for reconstruction
+                        original_id: list.id,
+                        description: list.description,
+                        creator: list.creator
+                    }
+
+                    listsToCreate.push(userList)
+                }
+
+                if (listsToCreate.length === 0) {
+                    log('✅ All curated lists already exist for this user!')
+                    return
+                }
+
+                log(`🏗️ Creating ${listsToCreate.length} curated lists...`)
+
+                // Insert the new lists
+                const { data: insertedLists, error: insertError } = await supabase
+                    .from('custom_lists')
+                    .insert(listsToCreate)
+                    .select()
+
+                if (insertError) {
+                    log('❌ Error creating lists:', insertError)
+                    return
+                }
+
+                log(`✅ Successfully created ${insertedLists.length} curated lists!`)
+                log('📝 Created lists:', insertedLists.map(list => list.name))
+
+                log('🎉 Backfill complete! You can now use the app with proper list context.')
+
+            } catch (error) {
+                log(`💥 Exception during backfill: ${error.message}`)
+            }
+        }
+
+        async function signIn() {
+            const email = document.getElementById('email').value
+            const password = document.getElementById('password').value
+
+            log(`🔐 Signing in as ${email}...`)
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                })
+
+                if (error) {
+                    log(`❌ Sign in error: ${error.message}`)
+                    return
+                }
+
+                log(`✅ Successfully signed in as ${data.user.email}`)
+
+                // Show backfill section, hide auth section
+                document.getElementById('auth-section').style.display = 'none'
+                document.getElementById('backfill-section').style.display = 'block'
+
+            } catch (err) {
+                log(`💥 Sign in exception: ${err.message}`)
+            }
+        }
+
+        // Add click handlers
+        document.getElementById('signin-btn').addEventListener('click', signIn)
+        document.getElementById('backfill-btn').addEventListener('click', backfillUserLists)
+
+        // Auto-sign in on page load
+        async function autoSignIn() {
+            log('🔄 Page loaded. Auto-signing in...')
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: 'mebako96@gmail.com',
+                    password: 'password123'
+                })
+
+                if (error) {
+                    log(`❌ Auto sign-in failed: ${error.message}`)
+                    log('🔄 Please use the manual sign-in above.')
+                    return
+                }
+
+                log(`✅ Auto sign-in successful: ${data.user.email}`)
+
+                // Show backfill section, hide auth section
+                document.getElementById('auth-section').style.display = 'none'
+                document.getElementById('backfill-section').style.display = 'block'
+
+                // Wait a moment for auth state to settle, then auto-run backfill
+                setTimeout(() => {
+                    log('🚀 Auto-running backfill...')
+                    backfillUserLists()
+                }, 1000)
+
+            } catch (err) {
+                log(`💥 Auto sign-in exception: ${err.message}`)
+                log('🔄 Please use the manual sign-in above.')
+            }
+        }
+
+        // Run auto sign-in on page load
+        autoSignIn()
+    </script>
+</body>
+</html>

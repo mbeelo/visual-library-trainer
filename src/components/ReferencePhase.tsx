@@ -11,6 +11,7 @@ interface ReferencePhaseProps {
   currentItem: string | null;
   currentCategory: string | null;
   listId: string;
+  listName: string;
   timer: number;
   onCompleteWithRating: (rating: Rating) => void;
   onRepeatItem?: () => void;
@@ -29,6 +30,7 @@ export default function ReferencePhase({
   currentItem,
   currentCategory,
   listId,
+  listName,
   onCompleteWithRating,
   onRepeatItem,
   onNextItem,
@@ -121,12 +123,17 @@ export default function ReferencePhase({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-slate-800 border border-orange-500/20 rounded-xl p-8 relative">
-        <div className="absolute top-4 right-4">
+      <div className="bg-slate-800 border border-orange-500/20 rounded-xl p-8">
+        {/* Pills - Stack on mobile, side-by-side on desktop */}
+        <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-2 mb-6">
+          <div className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium border border-slate-400 text-slate-400 bg-transparent">
+            {listName}
+          </div>
           <div className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium border border-orange-400 text-orange-400 bg-transparent">
             {currentCategory}
           </div>
         </div>
+
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold text-white">
             Study <span className="text-orange-400">{currentItem}</span> References

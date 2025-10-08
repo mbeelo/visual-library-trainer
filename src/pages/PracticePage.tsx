@@ -142,7 +142,7 @@ export function PracticePage() {
   const updatePhase = (newPhase: string) => {
     const params = new URLSearchParams(searchParams)
     params.set('phase', newPhase)
-    navigate(`/app/practice/${subject}?${params.toString()}`, { replace: true })
+    navigate(`/app/practice/${fallbackListId}/${subject}?${params.toString()}`, { replace: true })
   }
 
   const showReferences = () => {
@@ -239,6 +239,7 @@ export function PracticePage() {
         <DrawingPhase
           currentItem={currentItem}
           currentCategory={currentCategory}
+          listName={activeList.name}
           timer={timer}
           targetDuration={targetDuration}
           isTimerRunning={isTimerRunning}
@@ -254,6 +255,7 @@ export function PracticePage() {
           currentItem={currentItem}
           currentCategory={currentCategory}
           listId={fallbackListId}
+          listName={activeList.name}
           timer={timer}
           onCompleteWithRating={(rating) => {
             // Save the rating but don't auto-advance
