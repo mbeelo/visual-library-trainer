@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 
@@ -16,11 +16,16 @@ interface UserList {
   updated_at: string
 }
 
+// Global cache to prevent duplicate fetches across component mounts
+const listsCache: { [userId: string]: { lists: UserList[], timestamp: number } } = {}
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
 export function useUserLists() {
   const { user } = useAuth()
   const [userLists, setUserLists] = useState<UserList[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const fetchingRef = useRef(false)
 
   useEffect(() => {
     if (!user) {
@@ -29,7 +34,24 @@ export function useUserLists() {
       return
     }
 
+    // Check cache first
+    const cached = listsCache[user.id]
+    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+      console.log('🎯 Using cached user lists:', cached.lists.length, 'lists')
+      setUserLists(cached.lists)
+      setLoading(false)
+      setError(null)
+      return
+    }
+
+    // Prevent duplicate fetches if already fetching
+    if (fetchingRef.current) {
+      console.log('⏳ Already fetching user lists, waiting...')
+      return
+    }
+
     const loadUserLists = async () => {
+      fetchingRef.current = true
       try {
         console.log('🔍 Loading user lists from database for:', user.id)
 
@@ -45,8 +67,15 @@ export function useUserLists() {
           setUserLists([])
         } else {
           console.log('✅ Loaded user lists:', data.length, 'lists')
-          setUserLists(data || [])
+          const lists = data || []
+          setUserLists(lists)
           setError(null)
+
+          // Cache the results
+          listsCache[user.id] = {
+            lists,
+            timestamp: Date.now()
+          }
         }
       } catch (err) {
         console.error('💥 Exception loading user lists:', err)
@@ -54,6 +83,7 @@ export function useUserLists() {
         setUserLists([])
       } finally {
         setLoading(false)
+        fetchingRef.current = false
       }
     }
 
