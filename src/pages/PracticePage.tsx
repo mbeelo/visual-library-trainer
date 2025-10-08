@@ -176,9 +176,9 @@ export function PracticePage() {
       )
 
       // Navigate to the new challenge - include list context
-      const url = listId
-        ? `/app/practice/${listId}/${encodeURIComponent(challenge.item)}?category=${encodeURIComponent(challenge.category)}`
-        : `/app/practice/${encodeURIComponent(challenge.item)}?category=${encodeURIComponent(challenge.category)}`
+      // Use fallbackListId to ensure we maintain the correct list context
+      console.log(`🎯 generateChallenge: Using listId "${fallbackListId}" for navigation`)
+      const url = `/app/practice/${fallbackListId}/${encodeURIComponent(challenge.item)}?category=${encodeURIComponent(challenge.category)}`
       navigate(url)
     } catch (error) {
       console.error('Error generating challenge:', error)
