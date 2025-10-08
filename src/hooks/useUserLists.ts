@@ -47,9 +47,10 @@ export function useUserLists() {
     }
 
     // Check if already fetching for this user
-    if (pendingFetches[user.id]) {
+    const existingFetch = pendingFetches[user.id]
+    if (existingFetch) {
       console.log('⏳ Already fetching user lists, awaiting existing request for:', user.id)
-      pendingFetches[user.id]
+      existingFetch
         .then(lists => {
           setUserLists(lists)
           setLoading(false)
