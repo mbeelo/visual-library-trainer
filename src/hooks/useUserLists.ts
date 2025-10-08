@@ -21,7 +21,7 @@ const listsCache: { [userId: string]: { lists: UserList[], timestamp: number } }
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 // Global promise cache to prevent duplicate simultaneous requests
-const pendingFetches: { [userId: string]: Promise<UserList[]> } = {}
+const pendingFetches: { [userId: string]: Promise<UserList[]> | undefined } = {}
 
 export function useUserLists() {
   const { user } = useAuth()
