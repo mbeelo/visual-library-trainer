@@ -42,6 +42,7 @@ export type Database = {
         Row: {
           id: string
           user_id: string
+          list_id: string
           drawing_subject: string
           image_url: string
           position: number
@@ -51,6 +52,7 @@ export type Database = {
         Insert: {
           id?: string
           user_id: string
+          list_id: string
           drawing_subject: string
           image_url: string
           position?: number
@@ -60,6 +62,7 @@ export type Database = {
         Update: {
           id?: string
           user_id?: string
+          list_id?: string
           drawing_subject?: string
           image_url?: string
           position?: number
@@ -103,7 +106,12 @@ export type Database = {
           name: string
           items: string[]
           is_active: boolean
+          is_custom: boolean
+          original_id: string | null
+          description: string | null
+          creator: string | null
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
@@ -111,7 +119,12 @@ export type Database = {
           name: string
           items: string[]
           is_active?: boolean
+          is_custom?: boolean
+          original_id?: string | null
+          description?: string | null
+          creator?: string | null
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
@@ -119,7 +132,12 @@ export type Database = {
           name?: string
           items?: string[]
           is_active?: boolean
+          is_custom?: boolean
+          original_id?: string | null
+          description?: string | null
+          creator?: string | null
           created_at?: string
+          updated_at?: string
         }
       }
     }

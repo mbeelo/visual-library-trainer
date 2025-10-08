@@ -39,6 +39,9 @@ export function PracticePage() {
     selectedAlgorithm: 'struggling-focus'
   })
 
+  // Decode current item first
+  const currentItem = subject ? decodeURIComponent(subject) : null
+
   // Get active training list - use listId from URL if provided, otherwise use settings
   const allLists = [defaultList, ...communityLists, ...customLists]
   const activeListId = listId || settings.activeListId
@@ -65,8 +68,6 @@ export function PracticePage() {
   const [selectedTimerPreset] = useState<TimerPreset>(
     () => timerPresets.find(p => p.duration === settings.defaultTimerDuration) || timerPresets[3]
   )
-
-  const currentItem = subject ? decodeURIComponent(subject) : null
   const currentCategory = category ? decodeURIComponent(category) : null
 
   // No auto-start timer - users will manually start with their chosen duration
