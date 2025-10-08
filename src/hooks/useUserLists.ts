@@ -48,7 +48,7 @@ export function useUserLists() {
 
     // Check if already fetching for this user
     if (pendingFetches[user.id]) {
-      console.log('⏳ Already fetching user lists, awaiting existing request...')
+      console.log('⏳ Already fetching user lists, awaiting existing request for:', user.id)
       pendingFetches[user.id]
         .then(lists => {
           setUserLists(lists)
@@ -112,7 +112,7 @@ export function useUserLists() {
         setUserLists([])
         setLoading(false)
       })
-  }, [user])
+  }, [user?.id])
 
   // Helper function to find list by original_id (e.g., "default" -> actual UUID)
   const findListByOriginalId = (originalId: string): UserList | undefined => {
