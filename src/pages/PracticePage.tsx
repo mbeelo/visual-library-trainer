@@ -49,7 +49,40 @@ export function PracticePage() {
   // Get active training list - use listId from URL if provided, otherwise use settings
   const allLists = [defaultList, ...communityLists, ...customLists]
   const activeListId = listId || settings.activeListId
-  const activeList = allLists.find(list => list.id === activeListId) || defaultList
+
+  // Create the active list for algorithm processing
+  const activeList = useMemo(() => {
+    // First try to find in conceptual lists (for backwards compatibility)
+    const conceptualList = allLists.find(list => list.id === activeListId)
+    if (conceptualList) {
+      return conceptualList
+    }
+
+    // If activeListId is a database UUID, we need to find the corresponding user list
+    // and reconstruct it as a TrainingList for the algorithm
+    if (!listsLoading && userLists.length > 0) {
+      const userList = userLists.find(list => list.id === activeListId)
+      if (userList) {
+        // Find the original conceptual list to get the category structure
+        const originalList = allLists.find(list => list.id === userList.original_id)
+        if (originalList) {
+          console.log(`🧠 Algorithm: Using database list "${userList.name}" (${userList.id}) with original structure`)
+          return {
+            id: userList.id, // Use database UUID
+            name: userList.name,
+            description: userList.description || originalList.description,
+            creator: userList.creator || originalList.creator,
+            categories: originalList.categories, // Use original category structure
+            isCustom: userList.is_custom
+          }
+        }
+      }
+    }
+
+    // Fallback to default list
+    console.log(`⚠️ Algorithm: Falling back to default list for activeListId: ${activeListId}`)
+    return defaultList
+  }, [activeListId, allLists, listsLoading, userLists])
 
   // FALLBACK: If no listId in URL but we have a subject, try to find which list contains it
   const fallbackListId = useMemo(() => {
@@ -81,7 +114,6 @@ export function PracticePage() {
     return settings.activeListId // Default fallback
   }, [listId, subject, currentItem, allLists, settings.activeListId, listsLoading, findListContainingSubject, findListByOriginalId])
 
-  const finalActiveList = allLists.find(list => list.id === fallbackListId) || defaultList
 
   const [selectedTimerPreset] = useState<TimerPreset>(
     () => timerPresets.find(p => p.duration === settings.defaultTimerDuration) || timerPresets[3]
