@@ -4,6 +4,7 @@ import DrawingPhase from '../components/DrawingPhase'
 import ReferencePhase from '../components/ReferencePhase'
 import { timerPresets, defaultList, communityLists, trainingAlgorithms } from '../data'
 import { useLocalStorage } from '../hooks'
+import { useUserLists } from '../hooks/useUserLists'
 import { HistoryEntry, ItemRatings, TimerPreset, TrainingList } from '../types'
 import { useModal } from '../contexts/ModalContext'
 import { generateNextChallenge } from '../utils/challengeGeneration'
@@ -42,6 +43,9 @@ export function PracticePage() {
   // Decode current item first
   const currentItem = subject ? decodeURIComponent(subject) : null
 
+  // Load user's actual database lists
+  const { userLists, loading: listsLoading, findListContainingSubject, findListByOriginalId } = useUserLists()
+
   // Get active training list - use listId from URL if provided, otherwise use settings
   const allLists = [defaultList, ...communityLists, ...customLists]
   const activeListId = listId || settings.activeListId
@@ -50,18 +54,32 @@ export function PracticePage() {
   // FALLBACK: If no listId in URL but we have a subject, try to find which list contains it
   const fallbackListId = useMemo(() => {
     if (listId) return listId // URL has list ID, use it
-    if (subject && currentItem) {
-      // Find which list contains this subject
+    if (subject && currentItem && !listsLoading) {
+      // First try to find in user's actual database lists
+      const userList = findListContainingSubject(currentItem)
+      if (userList) {
+        console.log(`📍 Found subject "${currentItem}" in user's database list: ${userList.name} (${userList.id})`)
+        return userList.id // Return the actual UUID
+      }
+
+      // Fallback: find in conceptual lists and map to database list
       for (const list of allLists) {
         const allItems = Object.values(list.categories).flat()
         if (allItems.includes(currentItem)) {
-          console.log(`📍 Found subject "${currentItem}" in list: ${list.id}`)
-          return list.id
+          console.log(`📍 Found subject "${currentItem}" in conceptual list: ${list.id}`)
+          // Try to map conceptual list ID to actual database list
+          const actualList = findListByOriginalId(list.id)
+          if (actualList) {
+            console.log(`📍 Mapped to database list: ${actualList.name} (${actualList.id})`)
+            return actualList.id
+          }
+          console.log(`⚠️ No database list found for conceptual list: ${list.id}`)
+          return list.id // fallback to conceptual ID
         }
       }
     }
     return settings.activeListId // Default fallback
-  }, [listId, subject, currentItem, allLists, settings.activeListId])
+  }, [listId, subject, currentItem, allLists, settings.activeListId, listsLoading, findListContainingSubject, findListByOriginalId])
 
   const finalActiveList = allLists.find(list => list.id === fallbackListId) || defaultList
 
