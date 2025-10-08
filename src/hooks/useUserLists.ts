@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 
@@ -20,12 +20,14 @@ interface UserList {
 const listsCache: { [userId: string]: { lists: UserList[], timestamp: number } } = {}
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
+// Global promise cache to prevent duplicate simultaneous requests
+const pendingFetches: { [userId: string]: Promise<UserList[]> } = {}
+
 export function useUserLists() {
   const { user } = useAuth()
   const [userLists, setUserLists] = useState<UserList[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const fetchingRef = useRef(false)
 
   useEffect(() => {
     if (!user) {
@@ -44,14 +46,26 @@ export function useUserLists() {
       return
     }
 
-    // Prevent duplicate fetches if already fetching
-    if (fetchingRef.current) {
-      console.log('⏳ Already fetching user lists, waiting...')
+    // Check if already fetching for this user
+    if (pendingFetches[user.id]) {
+      console.log('⏳ Already fetching user lists, awaiting existing request...')
+      pendingFetches[user.id]
+        .then(lists => {
+          setUserLists(lists)
+          setLoading(false)
+          setError(null)
+        })
+        .catch(err => {
+          console.error('💥 Error from pending fetch:', err)
+          setError(err instanceof Error ? err.message : 'Unknown error')
+          setUserLists([])
+          setLoading(false)
+        })
       return
     }
 
-    const loadUserLists = async () => {
-      fetchingRef.current = true
+    // Create new fetch promise
+    const fetchPromise = (async (): Promise<UserList[]> => {
       try {
         console.log('🔍 Loading user lists from database for:', user.id)
 
@@ -63,31 +77,41 @@ export function useUserLists() {
 
         if (listError) {
           console.error('❌ Error loading user lists:', listError)
-          setError(listError.message)
-          setUserLists([])
-        } else {
-          console.log('✅ Loaded user lists:', data.length, 'lists')
-          const lists = data || []
-          setUserLists(lists)
-          setError(null)
-
-          // Cache the results
-          listsCache[user.id] = {
-            lists,
-            timestamp: Date.now()
-          }
+          throw new Error(listError.message)
         }
-      } catch (err) {
+
+        const lists = data || []
+        console.log('✅ Loaded user lists:', lists.length, 'lists')
+
+        // Cache the results
+        listsCache[user.id] = {
+          lists,
+          timestamp: Date.now()
+        }
+
+        return lists
+      } finally {
+        // Clean up pending fetch
+        delete pendingFetches[user.id]
+      }
+    })()
+
+    // Store pending fetch
+    pendingFetches[user.id] = fetchPromise
+
+    // Handle the result for this component
+    fetchPromise
+      .then(lists => {
+        setUserLists(lists)
+        setLoading(false)
+        setError(null)
+      })
+      .catch(err => {
         console.error('💥 Exception loading user lists:', err)
         setError(err instanceof Error ? err.message : 'Unknown error')
         setUserLists([])
-      } finally {
         setLoading(false)
-        fetchingRef.current = false
-      }
-    }
-
-    loadUserLists()
+      })
   }, [user])
 
   // Helper function to find list by original_id (e.g., "default" -> actual UUID)
