@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { Brain, BookOpen, Users, Star, Plus, Target, Zap, Trophy } from 'lucide-react'
 import { TrainingList, HistoryEntry, ItemRatings, TrainingAlgorithm } from '../types'
 import { ProgressDashboard } from './ProgressDashboard'
+import { useUserLists } from '../hooks/useUserLists'
 
 interface VisualLibraryHubProps {
   allLists: TrainingList[]
@@ -27,6 +28,7 @@ export function VisualLibraryHub({
   onAlgorithmChange
 }: VisualLibraryHubProps) {
   const navigate = useNavigate()
+  const { findListByOriginalId } = useUserLists()
 
   const getListStats = (list: TrainingList) => {
     const allItems = Object.values(list.categories).flat()
@@ -67,7 +69,12 @@ export function VisualLibraryHub({
     const firstCategory = categories[0]
     const firstItem = list.categories[firstCategory][0]
 
-    navigate(`/app/practice/${list.id}/${encodeURIComponent(firstItem)}?category=${encodeURIComponent(firstCategory)}`)
+    // Map conceptual list ID to actual database UUID if it's a curated list
+    const actualList = findListByOriginalId(list.id)
+    const listIdToUse = actualList ? actualList.id : list.id
+
+    console.log(`🎯 Quick Practice: Mapping "${list.id}" → "${listIdToUse}" for "${list.name}"`)
+    navigate(`/app/practice/${listIdToUse}/${encodeURIComponent(firstItem)}?category=${encodeURIComponent(firstCategory)}`)
   }
 
   const featuredLists = allLists.filter(list => !list.isCustom).slice(0, 3)
@@ -91,13 +98,20 @@ export function VisualLibraryHub({
           <div className="pt-4">
             <button
               onClick={() => {
-                const categories = Object.keys(allLists.find(list => !list.isCustom)?.categories || {})
-                const firstCategory = categories[0]
-                const firstList = allLists.find(list => !list.isCustom)
-                if (firstList && firstCategory) {
-                  const firstItem = firstList.categories[firstCategory][0]
-                  onSelectList(firstList)
-                  navigate(`/app/practice/${firstList.id}/${encodeURIComponent(firstItem)}?category=${encodeURIComponent(firstCategory)}`)
+                // Quick start with Visual Basics (default list)
+                const defaultList = allLists.find(list => list.id === 'default' && !list.isCustom)
+                if (defaultList) {
+                  const categories = Object.keys(defaultList.categories)
+                  const firstCategory = categories[0]
+                  const firstItem = defaultList.categories[firstCategory][0]
+
+                  // Map conceptual "default" ID to actual database UUID
+                  const actualList = findListByOriginalId('default')
+                  const listIdToUse = actualList ? actualList.id : defaultList.id
+
+                  console.log(`🎯 Hero button: Using list ID "${listIdToUse}" for Visual Basics`)
+                  onSelectList(defaultList)
+                  navigate(`/app/practice/${listIdToUse}/${encodeURIComponent(firstItem)}?category=${encodeURIComponent(firstCategory)}`)
                 }
               }}
               className="bg-orange-400 hover:bg-orange-500 text-slate-900 font-bold text-xl px-12 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl hover:shadow-orange-500/25 transform hover:scale-105"

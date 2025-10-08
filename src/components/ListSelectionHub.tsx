@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Play, Users, Star, Plus, BookOpen, Target, Clock, Brain, Zap } from 'lucide-react'
 import { TrainingList, HistoryEntry, ItemRatings, TrainingAlgorithm } from '../types'
+import { useUserLists } from '../hooks/useUserLists'
 
 interface ListSelectionHubProps {
   allLists: TrainingList[]
@@ -26,6 +27,7 @@ export function ListSelectionHub({
   onAlgorithmChange
 }: ListSelectionHubProps) {
   const navigate = useNavigate()
+  const { findListByOriginalId } = useUserLists()
 
   const getListStats = (list: TrainingList) => {
     const allItems = Object.values(list.categories).flat()
@@ -64,7 +66,12 @@ export function ListSelectionHub({
     const firstCategory = categories[0]
     const firstItem = list.categories[firstCategory][0]
 
-    navigate(`/app/practice/${list.id}/${encodeURIComponent(firstItem)}?category=${encodeURIComponent(firstCategory)}`)
+    // Map conceptual list ID to actual database UUID if it's a curated list
+    const actualList = findListByOriginalId(list.id)
+    const listIdToUse = actualList ? actualList.id : list.id
+
+    console.log(`🎯 ListSelection startPractice: Mapping "${list.id}" → "${listIdToUse}" for "${list.name}"`)
+    navigate(`/app/practice/${listIdToUse}/${encodeURIComponent(firstItem)}?category=${encodeURIComponent(firstCategory)}`)
   }
 
   const featuredLists = allLists.filter(list => !list.isCustom).slice(0, 3)
