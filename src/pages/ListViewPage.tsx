@@ -4,10 +4,12 @@ import Dashboard from '../components/Dashboard'
 import { useLocalStorage } from '../hooks'
 import { HistoryEntry, ItemRatings, TrainingList, TrainingAlgorithm } from '../types'
 import { defaultList, communityLists, trainingAlgorithms } from '../data'
+import { useAuth } from '../contexts/AuthContext'
 
 export function ListViewPage() {
   const { listId } = useParams<{ listId: string }>()
   const navigate = useNavigate()
+  const { userLists, findListByOriginalId } = useAuth()
 
   const [history] = useLocalStorage<HistoryEntry[]>('vlt-history', [])
   const [itemRatings] = useLocalStorage<ItemRatings>('vlt-ratings', {})
@@ -19,8 +21,32 @@ export function ListViewPage() {
     soundEnabled: true
   })
 
+  // Find the list in the user's actual database lists, then map to conceptual structure
   const allLists = [defaultList, ...communityLists, ...customLists]
-  const currentList = allLists.find(list => list.id === listId) || defaultList
+
+  // First try to find in user's database lists
+  const userList = userLists.find(list => list.id === listId)
+  let currentList: TrainingList
+
+  if (userList) {
+    // Map database list back to conceptual structure for Dashboard
+    const originalList = allLists.find(list => list.id === userList.original_id)
+    if (originalList) {
+      currentList = {
+        id: userList.id, // Use database UUID
+        name: userList.name,
+        description: userList.description || originalList.description,
+        creator: userList.creator || originalList.creator,
+        categories: originalList.categories, // Use original category structure
+        isCustom: userList.is_custom
+      }
+    } else {
+      currentList = defaultList // fallback
+    }
+  } else {
+    // Fallback to conceptual lists
+    currentList = allLists.find(list => list.id === listId) || defaultList
+  }
   const selectedAlgorithm = trainingAlgorithms.find(alg => alg.id === settings.selectedAlgorithm) || trainingAlgorithms[0]
 
   const handleAlgorithmModeChange = (enabled: boolean) => {
