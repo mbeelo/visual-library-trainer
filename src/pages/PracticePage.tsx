@@ -4,9 +4,9 @@ import DrawingPhase from '../components/DrawingPhase'
 import ReferencePhase from '../components/ReferencePhase'
 import { timerPresets, defaultList, communityLists, trainingAlgorithms } from '../data'
 import { useLocalStorage } from '../hooks'
-import { useUserLists } from '../hooks/useUserLists'
 import { HistoryEntry, ItemRatings, TimerPreset, TrainingList } from '../types'
 import { useModal } from '../contexts/ModalContext'
+import { useAuth } from '../contexts/AuthContext'
 import { generateNextChallenge } from '../utils/challengeGeneration'
 import { ProgressTrackingService } from '../services/progressTracking'
 
@@ -44,7 +44,7 @@ export function PracticePage() {
   const currentItem = subject ? decodeURIComponent(subject) : null
 
   // Load user's actual database lists
-  const { userLists, loading: listsLoading, findListContainingSubject, findListByOriginalId } = useUserLists()
+  const { userLists, listsLoading, findListContainingSubject, findListByOriginalId } = useAuth()
 
   // Get active training list - use listId from URL if provided, otherwise use settings
   const allLists = [defaultList, ...communityLists, ...customLists]

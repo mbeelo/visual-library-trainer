@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Play, Users, Star, Plus, BookOpen, Target, Clock, Brain, Zap } from 'lucide-react'
 import { TrainingList, HistoryEntry, ItemRatings, TrainingAlgorithm } from '../types'
-import { useUserLists } from '../hooks/useUserLists'
+import { useAuth } from '../contexts/AuthContext'
 
 interface ListSelectionHubProps {
   allLists: TrainingList[]
@@ -27,7 +27,7 @@ export function ListSelectionHub({
   onAlgorithmChange
 }: ListSelectionHubProps) {
   const navigate = useNavigate()
-  const { findListByOriginalId } = useUserLists()
+  const { findListByOriginalId } = useAuth()
 
   const getListStats = (list: TrainingList) => {
     const allItems = Object.values(list.categories).flat()

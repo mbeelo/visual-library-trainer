@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { Brain, BookOpen, Users, Star, Plus, Target, Zap, Trophy } from 'lucide-react'
 import { TrainingList, HistoryEntry, ItemRatings, TrainingAlgorithm } from '../types'
 import { ProgressDashboard } from './ProgressDashboard'
-import { useUserLists } from '../hooks/useUserLists'
+import { useAuth } from '../contexts/AuthContext'
 
 interface VisualLibraryHubProps {
   allLists: TrainingList[]
@@ -28,7 +28,7 @@ export function VisualLibraryHub({
   onAlgorithmChange
 }: VisualLibraryHubProps) {
   const navigate = useNavigate()
-  const { findListByOriginalId } = useUserLists()
+  const { findListByOriginalId } = useAuth()
 
   const getListStats = (list: TrainingList) => {
     const allItems = Object.values(list.categories).flat()

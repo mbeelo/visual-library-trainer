@@ -55,6 +55,7 @@ export function PersonalImageBoard({
     } else {
       // For non-authenticated users, set loading to false so they see the empty state
       setLoading(false)
+      setIsRefreshing(false)
       setImages([])
       onImageCountChange(0)
     }
@@ -83,8 +84,8 @@ export function PersonalImageBoard({
     if (!user) return
 
     // Prevent concurrent requests
-    if (loading && !isRefreshing) {
-      console.log('🚫 Skipping loadImages - already loading')
+    if (isRefreshing) {
+      console.log('🚫 Skipping loadImages - already refreshing')
       return
     }
 

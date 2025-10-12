@@ -2,14 +2,32 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
+interface UserList {
+  id: string
+  user_id: string
+  name: string
+  items: string[]
+  is_active: boolean
+  is_custom: boolean
+  original_id: string | null
+  description: string | null
+  creator: string | null
+  created_at: string
+  updated_at: string
+}
+
 interface AuthContextType {
   user: User | null
   loading: boolean
+  userLists: UserList[]
+  listsLoading: boolean
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signUp: (email: string, password: string) => Promise<{ error: any }>
   signInWithGoogle: () => Promise<{ error: any }>
   signOut: () => Promise<void>
   subscriptionTier: 'free' | 'pro'
+  findListByOriginalId: (originalId: string) => UserList | undefined
+  findListContainingSubject: (subject: string) => UserList | undefined
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -26,6 +44,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'pro'>('free')
+  const [userLists, setUserLists] = useState<UserList[]>([])
+  const [listsLoading, setListsLoading] = useState(false)
 
   useEffect(() => {
     console.log('🔵 AuthProvider mounting, initializing auth state...')
@@ -73,12 +93,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(session?.user ?? null)
+
       if (session?.user) {
-        await fetchUserProfile(session.user.id)
+        // Set loading false first, then fetch profile in background
+        setLoading(false)
+        fetchUserProfile(session.user.id) // Don't await - let it run in background
       } else {
         setSubscriptionTier('free')
+        setLoading(false)
       }
-      setLoading(false)
     })
 
     return () => subscription.unsubscribe()
@@ -101,6 +124,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSubscriptionTier(data.subscription_tier)
         // Check if user has curated lists, create if missing
         await ensureUserCuratedLists(userId)
+        // Load user lists after profile is established
+        await loadUserLists(userId)
       } else {
         // Create user profile if it doesn't exist
         await createUserProfile(userId)
@@ -196,10 +221,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('❌ Error creating curated lists for user:', error)
       } else {
         console.log('✅ Successfully created', userLists.length, 'curated lists for user')
+        // Load the newly created lists
+        await loadUserLists(userId)
       }
     } catch (error) {
       console.error('💥 Exception in createUserCuratedLists:', error)
     }
+  }
+
+  const loadUserLists = async (userId: string) => {
+    try {
+      setListsLoading(true)
+      console.log('🔍 Loading user lists from AuthContext for:', userId)
+
+      const { data, error } = await supabase
+        .from('custom_lists')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true })
+
+      if (error) {
+        console.error('❌ Error loading user lists:', error)
+        setUserLists([])
+        return
+      }
+
+      const lists = data || []
+      console.log('✅ Loaded user lists from AuthContext:', lists.length, 'lists')
+      setUserLists(lists)
+    } catch (error) {
+      console.error('💥 Exception loading user lists:', error)
+      setUserLists([])
+    } finally {
+      setListsLoading(false)
+    }
+  }
+
+  const findListByOriginalId = (originalId: string): UserList | undefined => {
+    return userLists.find(list => list.original_id === originalId)
+  }
+
+  const findListContainingSubject = (subject: string): UserList | undefined => {
+    return userLists.find(list => list.items.includes(subject))
   }
 
   const signIn = async (email: string, password: string) => {
@@ -267,11 +330,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     user,
     loading,
+    userLists,
+    listsLoading,
     signIn,
     signUp,
     signInWithGoogle,
     signOut,
-    subscriptionTier
+    subscriptionTier,
+    findListByOriginalId,
+    findListContainingSubject
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

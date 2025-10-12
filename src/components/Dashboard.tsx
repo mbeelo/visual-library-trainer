@@ -44,7 +44,7 @@ export default function Dashboard({
   activeList,
   onPracticeSubject
 }: DashboardProps) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [subjectData, setSubjectData] = useState<SubjectData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,8 +53,20 @@ export default function Dashboard({
   // Load subject data with reference counts (bulk optimized)
   useEffect(() => {
     const loadSubjectData = async () => {
-      if (!user || !activeList) {
-        console.log('👤 No user or activeList:', { user: !!user, activeList: !!activeList });
+      if (!activeList) {
+        console.log('👤 No activeList provided');
+        setLoading(false);
+        return;
+      }
+
+      // Wait for auth to complete before loading user data
+      if (authLoading) {
+        console.log('⏳ Waiting for auth to complete...');
+        return;
+      }
+
+      if (!user) {
+        console.log('👤 No user - cannot load images');
         setLoading(false);
         return;
       }
@@ -64,7 +76,7 @@ export default function Dashboard({
       const subjects: SubjectData[] = [];
 
       try {
-        // 🚀 BULK LOAD: Get all user images at once instead of individual queries
+        // 🚀 BULK LOAD: Get all user images at once
         const allUserImages = await SimpleImageService.getAllUserImages(user.id);
         console.log('📸 Bulk loaded images for', Object.keys(allUserImages).length, 'subjects');
 
@@ -131,7 +143,7 @@ export default function Dashboard({
     };
 
     loadSubjectData();
-  }, [user?.id, activeList?.name, itemRatings]); // Removed history to prevent constant reloads
+  }, [authLoading, user?.id, activeList?.name, itemRatings]); // Include authLoading to wait for auth completion
 
   // Filter subjects based on search and category
   const filteredSubjects = subjectData.filter(subject => {
