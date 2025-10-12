@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { X, Check, Star, Zap, Cloud, BarChart } from 'lucide-react'
+import { X, Check, Star, Zap, Cloud, BarChart, Share, Download, Clock } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-// import { stripe } from '../lib/stripe'
 
 interface UpgradeModalProps {
   isOpen: boolean
@@ -9,44 +8,52 @@ interface UpgradeModalProps {
 }
 
 export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
-  // const [isLoading, setIsLoading] = useState(false) // Commented out for launch
+  const [isLoading, setIsLoading] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly')
-  // const { user } = useAuth() // Commented out for launch
+  const { user } = useAuth()
 
   if (!isOpen) return null
 
-  /* Commented out for launch
   const handleUpgrade = async () => {
     if (!user) return
 
     setIsLoading(true)
     try {
-      // Create Stripe Checkout session
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          priceId: selectedPlan === 'monthly' ? 'price_monthly' : 'price_yearly',
-          userId: user.id,
-          email: user.email,
-        }),
+      // Get the correct price ID based on selected plan
+      const priceId = selectedPlan === 'monthly'
+        ? import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY
+        : import.meta.env.VITE_STRIPE_PRICE_ID_YEARLY
+
+      // Load Stripe dynamically
+      const { loadStripe } = await import('@stripe/stripe-js')
+      const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+
+      if (!stripe) {
+        throw new Error('Failed to load Stripe')
+      }
+
+      // Redirect directly to Stripe Checkout
+      const { error } = await stripe.redirectToCheckout({
+        lineItems: [{
+          price: priceId,
+          quantity: 1,
+        }],
+        mode: 'subscription',
+        successUrl: `${window.location.origin}/app/account?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${window.location.origin}/app/dashboard`,
+        customerEmail: user.email,
       })
 
-      const { sessionId } = await response.json()
-      const stripeInstance = await stripe
-
-      if (stripeInstance) {
-        await stripeInstance.redirectToCheckout({ sessionId })
+      if (error) {
+        throw error
       }
     } catch (error) {
       console.error('Error creating checkout session:', error)
+      alert('Sorry, there was an error processing your request. Please try again.')
     } finally {
       setIsLoading(false)
     }
   }
-  */
 
   const monthlyPrice = 9
   const yearlyPrice = 79
@@ -119,8 +126,10 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
             )}
           </div>
 
-          {/* Features */}
-          <div className="space-y-4 mb-8">
+          {/* Available Features */}
+          <div className="space-y-4 mb-6">
+            <h3 className="text-lg font-semibold text-white mb-3">Available Today</h3>
+
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                 <Check className="w-3 h-3 text-slate-900" />
@@ -141,9 +150,9 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
               <div>
                 <div className="font-medium text-white flex items-center gap-2">
                   <Cloud className="w-4 h-4 text-blue-500" />
-                  Cloud Sync
+                  Cloud Sync & Backup
                 </div>
-                <p className="text-sm text-slate-300">Access your collections from any device, never lose your progress</p>
+                <p className="text-sm text-slate-300">Your collections and progress automatically sync across all devices</p>
               </div>
             </div>
 
@@ -152,31 +161,55 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
                 <Check className="w-3 h-3 text-slate-900" />
               </div>
               <div>
-                <div className="font-medium text-white flex items-center gap-2">
+                <div className="font-medium text-white">Enhanced Progress Tracking</div>
+                <p className="text-sm text-slate-300">Detailed session history with ratings, timing, and streak tracking</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Coming Soon Features */}
+          <div className="space-y-4 mb-8">
+            <h3 className="text-lg font-semibold text-orange-400 mb-3 flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Coming Soon to Pro
+            </h3>
+
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-slate-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <BarChart className="w-3 h-3 text-slate-300" />
+              </div>
+              <div>
+                <div className="font-medium text-slate-300 flex items-center gap-2">
                   <BarChart className="w-4 h-4 text-green-500" />
-                  Advanced Analytics
+                  Advanced Analytics Dashboard
                 </div>
-                <p className="text-sm text-slate-300">Track your progress with detailed insights and performance metrics</p>
+                <p className="text-sm text-slate-400">Performance insights, weak subject identification, improvement trends</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Check className="w-3 h-3 text-slate-900" />
+              <div className="w-6 h-6 bg-slate-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Share className="w-3 h-3 text-slate-300" />
               </div>
               <div>
-                <div className="font-medium text-white">Export Collections</div>
-                <p className="text-sm text-slate-300">Download your reference boards as PDFs or images</p>
+                <div className="font-medium text-slate-300 flex items-center gap-2">
+                  <Share className="w-4 h-4 text-purple-500" />
+                  Share & Collaborate
+                </div>
+                <p className="text-sm text-slate-400">Share reference collections with art communities and friends</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Check className="w-3 h-3 text-slate-900" />
+              <div className="w-6 h-6 bg-slate-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Download className="w-3 h-3 text-slate-300" />
               </div>
               <div>
-                <div className="font-medium text-white">Priority Support</div>
-                <p className="text-sm text-slate-300">Get help when you need it with dedicated support</p>
+                <div className="font-medium text-slate-300 flex items-center gap-2">
+                  <Download className="w-4 h-4 text-blue-500" />
+                  Export Collections
+                </div>
+                <p className="text-sm text-slate-400">Download reference boards as PDFs, mood boards, or Pinterest exports</p>
               </div>
             </div>
           </div>
@@ -185,30 +218,30 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
           <div className="bg-slate-700/30 border border-slate-600 rounded-lg p-4 mb-6">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <h4 className="font-medium text-white mb-2">Free Tier</h4>
+                <h4 className="font-medium text-white mb-2">Free Forever</h4>
                 <ul className="space-y-1 text-slate-300">
-                  <li>• 3 images per subject</li>
-                  <li>• Local storage only</li>
-                  <li>• Basic features</li>
+                  <li>• 3 reference images per subject</li>
+                  <li>• Local device storage only</li>
+                  <li>• Core practice features</li>
+                  <li>• Drawing timer & ratings</li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-medium text-orange-400 mb-2">Pro Tier</h4>
+                <h4 className="font-medium text-orange-400 mb-2">Pro ($9/month)</h4>
                 <ul className="space-y-1 text-orange-300">
-                  <li>• Unlimited images</li>
-                  <li>• Cloud sync</li>
-                  <li>• Advanced features</li>
+                  <li>• Unlimited reference images</li>
+                  <li>• Cloud sync across devices</li>
+                  <li>• Enhanced progress tracking</li>
+                  <li>• Priority feature access</li>
                 </ul>
               </div>
             </div>
           </div>
 
           {/* CTA Button */}
-          {/* Commented out for launch - uncomment when Stripe is configured */}
-          {/*
           <button
             onClick={handleUpgrade}
-            disabled={isLoading}
+            disabled={isLoading || !user}
             className="w-full bg-orange-400 hover:bg-orange-500 disabled:bg-orange-300 text-slate-900 font-medium py-3 px-6 rounded-lg transition-colors"
           >
             {isLoading ? 'Setting up...' : `Upgrade to Pro - $${selectedPlan === 'monthly' ? monthlyPrice : yearlyMonthlyEquivalent}/month`}
@@ -216,16 +249,6 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
 
           <p className="text-xs text-slate-400 text-center mt-4">
             Secure payment powered by Stripe. Cancel anytime.
-          </p>
-          */}
-
-          {/* Temporary launch message */}
-          <div className="w-full bg-slate-700 text-slate-300 font-medium py-3 px-6 rounded-lg text-center border border-slate-600">
-            Pro Coming Soon
-          </div>
-
-          <p className="text-xs text-slate-400 text-center mt-4">
-            We're putting the finishing touches on Pro features. Stay tuned!
           </p>
         </div>
       </div>

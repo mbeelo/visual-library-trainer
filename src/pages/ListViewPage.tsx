@@ -24,8 +24,8 @@ export function ListViewPage() {
   // Find the list in the user's actual database lists, then map to conceptual structure
   const allLists = [defaultList, ...communityLists, ...customLists]
 
-  // First try to find in user's database lists
-  const userList = userLists.find(list => list.id === listId)
+  // First try to find in user's database lists - check both by UUID and by original_id
+  const userList = userLists.find(list => list.id === listId || list.original_id === listId)
   let currentList: TrainingList
 
   if (userList) {

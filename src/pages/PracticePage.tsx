@@ -91,6 +91,7 @@ export function PracticePage() {
 
   // FALLBACK: If no listId in URL but we have a subject, try to find which list contains it
   const fallbackListId = useMemo(() => {
+    console.log('🔍 fallbackListId calculation:', { listId, subject, currentItem, listsLoading, userListsCount: userLists.length });
     if (listId) return listId // URL has list ID, use it
     if (subject && currentItem && !listsLoading) {
       // First try to find in user's actual database lists
@@ -112,11 +113,27 @@ export function PracticePage() {
             return actualList.id
           }
           console.log(`⚠️ No database list found for conceptual list: ${list.id}`)
-          return list.id // fallback to conceptual ID
+          // NEVER return conceptual ID - find the default database list instead
+          const defaultDbList = findListByOriginalId('default')
+          if (defaultDbList) {
+            console.log(`🔄 Falling back to default database list: ${defaultDbList.id}`)
+            return defaultDbList.id
+          }
         }
       }
     }
-    return settings.activeListId // Default fallback
+
+    // Last resort: map settings.activeListId to database UUID if it's conceptual
+    if (settings.activeListId && !settings.activeListId.includes('-')) {
+      // It's a conceptual ID, map to database
+      const dbList = findListByOriginalId(settings.activeListId)
+      if (dbList) {
+        console.log(`🔄 Mapped settings activeListId "${settings.activeListId}" to database: ${dbList.id}`)
+        return dbList.id
+      }
+    }
+
+    return settings.activeListId // Should be a UUID at this point
   }, [listId, subject, currentItem, allLists, settings.activeListId, listsLoading, findListContainingSubject, findListByOriginalId])
 
 
