@@ -76,16 +76,26 @@ export function useUserLists() {
     return
   }
 
-  // Create new fetch promise
+  // Create new fetch promise with timeout
   const fetchPromise = (async (): Promise<UserList[]> => {
     try {
       console.log('🔍 Loading user lists from database for:', user.id)
+
+      // Add timeout to prevent hanging
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => {
+        console.warn('⏰ Database request timeout, aborting...')
+        controller.abort()
+      }, 10000) // 10 second timeout
 
       const { data, error: listError } = await supabase
         .from('custom_lists')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: true })
+        .abortSignal(controller.signal)
+
+      clearTimeout(timeoutId)
 
       if (listError) {
         console.error('❌ Error loading user lists:', listError)
@@ -102,6 +112,10 @@ export function useUserLists() {
       }
 
       return lists
+    } catch (error) {
+      console.error('💥 Database fetch failed:', error)
+      // Return empty array as fallback instead of throwing
+      return []
     } finally {
       // Clean up pending fetch
       delete pendingFetches[user.id]
