@@ -24,28 +24,62 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
         ? import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY
         : import.meta.env.VITE_STRIPE_PRICE_ID_YEARLY
 
-      // Load Stripe dynamically
-      const { loadStripe } = await import('@stripe/stripe-js')
-      const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+      const isDevelopment = import.meta.env.DEV
 
-      if (!stripe) {
-        throw new Error('Failed to load Stripe')
-      }
+      if (isDevelopment) {
+        // Development: Use client-side approach (bypasses client-only integration requirement in test mode)
+        console.log('🔧 Development mode: Using client-side Stripe checkout')
 
-      // Redirect directly to Stripe Checkout
-      const { error } = await stripe.redirectToCheckout({
-        lineItems: [{
-          price: priceId,
-          quantity: 1,
-        }],
-        mode: 'subscription',
-        successUrl: `${window.location.origin}/app/account?session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${window.location.origin}/app/dashboard`,
-        customerEmail: user.email,
-      })
+        const { loadStripe } = await import('@stripe/stripe-js')
+        const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
-      if (error) {
-        throw error
+        if (!stripe) {
+          throw new Error('Failed to load Stripe')
+        }
+
+        // Use redirectToCheckout in development (test keys bypass client-only requirement)
+        const { error } = await stripe.redirectToCheckout({
+          lineItems: [{
+            price: priceId,
+            quantity: 1,
+          }],
+          mode: 'subscription',
+          successUrl: `${window.location.origin}/app/account?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${window.location.origin}/app/dashboard`,
+          customerEmail: user.email,
+        })
+
+        if (error) {
+          throw error
+        }
+      } else {
+        // Production: Use server-side API
+        console.log('🚀 Production mode: Using server-side checkout session')
+
+        const response = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            priceId,
+            userId: user.id,
+            userEmail: user.email,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const { url } = await response.json()
+
+        if (!url) {
+          throw new Error('No checkout URL returned from server')
+        }
+
+        // Redirect to Stripe Checkout
+        window.location.href = url
       }
     } catch (error) {
       console.error('Error creating checkout session:', error)
