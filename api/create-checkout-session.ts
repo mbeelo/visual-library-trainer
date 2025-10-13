@@ -32,8 +32,8 @@ export default async function handler(
           quantity: 1,
         },
       ],
-      success_url: `${process.env.VERCEL_URL || 'https://afterimage.app'}/app/account?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.VERCEL_URL || 'https://afterimage.app'}/app/dashboard`,
+      success_url: `https://${process.env.VERCEL_URL || 'afterimage.app'}/app/account?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `https://${process.env.VERCEL_URL || 'afterimage.app'}/app/dashboard`,
       metadata: {
         userId: userId || '',
       },
