@@ -98,7 +98,7 @@ export function ImageUrlInput({
   const [error, setError] = useState('')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [detectedPlatform, setDetectedPlatform] = useState<Platform>(null)
-  const [uploadMode, setUploadMode] = useState<'url' | 'file'>('url') // Temporarily default to URL only while fixing Supabase Storage
+  const [uploadMode, setUploadMode] = useState<'url' | 'file'>('file') // Default to file upload for better UX
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -341,7 +341,7 @@ export function ImageUrlInput({
           <div className="space-y-1">
             <span className="text-lg">Add Reference Image</span>
             <span className="text-sm text-slate-400 block">
-              Upload from your device or add image URL
+              Upload from device or paste image URL
             </span>
           </div>
         </button>
@@ -379,10 +379,6 @@ export function ImageUrlInput({
           </button>
         </div>
 
-        {/* Temporary Notice */}
-        <div className="bg-orange-100 border border-orange-200 rounded-lg p-3 text-orange-800 text-sm">
-          📋 <strong>Note:</strong> File upload temporarily disabled while we fix storage. Please use image URLs for now!
-        </div>
 
         {/* Mode Toggle Tabs */}
         <div className="flex bg-slate-700 rounded-lg p-1">
@@ -393,11 +389,14 @@ export function ImageUrlInput({
               setError('')
               setPreviewUrl(null)
             }}
-            disabled={true}
-            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium opacity-50 cursor-not-allowed text-slate-500"
+            className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              uploadMode === 'file'
+                ? 'bg-orange-400 text-slate-900'
+                : 'text-slate-300 hover:text-white hover:bg-slate-600'
+            }`}
           >
             <Upload size={16} />
-            Upload Image (Coming Soon)
+            Upload Image
           </button>
           <button
             type="button"

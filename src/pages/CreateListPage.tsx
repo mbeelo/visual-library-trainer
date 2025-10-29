@@ -13,8 +13,8 @@ export default function CreateListPage() {
   const [formData, setFormData] = useState<CustomListData>({
     name: '',
     description: '',
-    creator: '',
-    socialLink: '',
+    creator: 'Anonymous', // Default value for hidden field
+    socialLink: '', // Keep as optional, hidden from UI
     rawItems: ''
   })
   const [errors, setErrors] = useState<string[]>([])
@@ -162,32 +162,7 @@ Airplane`
                   </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Your Name *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Your name or username"
-                    value={formData.creator}
-                    onChange={(e) => setFormData(prev => ({ ...prev, creator: e.target.value }))}
-                    className="w-full px-4 py-3 border border-slate-600 bg-slate-700 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Social Link (optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Your portfolio, Instagram, Twitter, etc."
-                    value={formData.socialLink}
-                    onChange={(e) => setFormData(prev => ({ ...prev, socialLink: e.target.value }))}
-                    className="w-full px-4 py-3 border border-slate-600 bg-slate-700 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
-                  />
-                </div>
+                {/* Hidden fields for launch - keeping data structure intact */}
 
                 <div>
                   <label className="block text-sm font-medium text-white mb-2">

@@ -14,14 +14,15 @@ Visual Library Trainer is a React web application that helps artists build visua
 - **Framework**: React 19.1.1 with TypeScript
 - **Build Tool**: Vite 7.1.7
 - **Routing**: React Router 7.9.3 with automatic scroll restoration
-- **Styling**: Tailwind CSS 4.1.13 (updated to v4)
+- **Styling**: Tailwind CSS 3.4.17
 - **Icons**: Lucide React
 - **Charts**: Recharts 3.2.1 (for admin analytics)
 - **Package Manager**: npm
 
 ### Backend & Deployment
 - **Database & Auth**: Supabase (PostgreSQL + Authentication + Storage)
-- **Payments**: Stripe (integration ready, currently disabled for launch)
+- **Payments**: Stripe (LIVE - integrated and production-ready)
+- **Tax Compliance**: Stripe Tax with California registration (approved)
 - **Hosting**: Vercel with automatic deployments from GitHub
 - **Domain**: `afterimage.app` (live production domain)
 - **Environment**: Production-ready with security headers and OG meta tags
@@ -78,6 +79,7 @@ src/
 ├── components/     # Reusable UI components (23+ components)
 │   ├── ScrollToTop.tsx         # Automatic scroll restoration on navigation
 │   ├── PersonalImageBoard.tsx  # Pinterest-style image collections
+│   ├── UpgradeModal.tsx        # Stripe payment integration (LIVE)
 │   ├── ErrorBoundary.tsx       # Application error handling
 │   └── ...
 ├── pages/          # Page components (11 pages)
@@ -97,6 +99,8 @@ src/
 ├── utils/         # Helper functions (time, references, styling)
 ├── App.tsx        # React Router setup with ScrollToTop
 └── main.tsx       # Application entry point
+api/               # Vercel serverless functions
+└── create-checkout-session.ts # Stripe Checkout API endpoint
 ```
 
 ## Data Persistence
@@ -211,11 +215,14 @@ custom_lists (id, user_id, name, items, is_active, created_at)
 VITE_SUPABASE_URL=https://bcdmydwsoxpzhntyiuxf.supabase.co
 VITE_SUPABASE_ANON_KEY=sb_publishable_Vicu7_LtKedwD-5mJE9sXA_aTwZdk1G
 
+# Stripe (LIVE PAYMENTS - configured and working)
+VITE_STRIPE_PUBLISHABLE_KEY=pk_live_51SH5i0920FItfO5V2vyayHHzFPFci3dkbazxRiExbIZxRFwZSNQdN5TbaDYrKxHE6enkQTmLWsXzEHT44FicByAh00k2cqkIgn
+STRIPE_SECRET_KEY=sk_live_*** # Server-side only, configured in Vercel
+VITE_STRIPE_PRICE_ID_MONTHLY=price_1SHRM0920FItfO5VqeL6x6qP
+VITE_STRIPE_PRICE_ID_YEARLY=price_1SHRM3920FItfO5VYpyguuak
+
 # Admin Access
 VITE_ADMIN_KEY=after_image_2025
-
-# Stripe (integration ready but currently disabled)
-# VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 ```
 
 **Local Development:**
@@ -240,10 +247,12 @@ VITE_ADMIN_KEY=after_image_2025
 - **Database**: `subject_boards`, `board_images` tables with full RLS security
 - **UX**: Automatic board per drawing subject, hover interactions, seamless saving
 
-#### Payment Integration
-- **Components**: `UpgradeModal` with Stripe checkout
-- **Features**: Freemium tiers, upgrade prompts, pricing strategy
-- **Files**: `src/components/UpgradeModal.tsx`, `src/lib/stripe.ts`
+#### **💳 Live Payment Integration** (PRODUCTION READY)
+- **Components**: `UpgradeModal` with live Stripe checkout
+- **Features**: Monthly ($9) & Yearly ($79) subscriptions, tax compliance, upgrade prompts
+- **Files**: `src/components/UpgradeModal.tsx`, `src/lib/stripe.ts`, `api/create-checkout-session.ts`
+- **Tax Compliance**: California seller's permit approved, Stripe Tax auto-configured
+- **Status**: LIVE PAYMENTS READY - can process real subscriptions immediately
 
 #### Data Migration
 - **Components**: `MigrationPrompt` for localStorage → cloud migration
@@ -256,7 +265,7 @@ VITE_ADMIN_KEY=after_image_2025
 - **Service**: Database client in `src/lib/supabase.ts`
 - **Migration**: `reference-boards-migration.sql`, `board-migration-fixes.sql`
 
-### 🚀 **Production Ready - Launch Version**
+### 🚀 **LIVE PRODUCTION SaaS - READY FOR REVENUE**
 - All TypeScript errors resolved ✅
 - ESLint passes ✅
 - Build successful ✅
@@ -264,12 +273,14 @@ VITE_ADMIN_KEY=after_image_2025
 - Environment configured ✅
 - **Complete user flow working** (Landing → Practice → Rating) ✅
 - **Authentication system stable** (progressive signup, OAuth) ✅
-- **Payment integration ready** (Stripe commented out for launch) ✅
+- **LIVE PAYMENTS ACTIVE** (Stripe + California tax compliance) ✅
+- **Tax compliance approved** (CA seller's permit + Stripe Tax) ✅
 - **Admin dashboard functional** (key-based access with metrics) ✅
 - **Legal pages complete** (Terms, Privacy Policy) ✅
 - **Contact system working** (mailto-based with feature requests) ✅
 - **Error handling comprehensive** (graceful fallbacks throughout) ✅
 - **Responsive design complete** (mobile & desktop) ✅
+- **MONETIZATION READY** - Can process real subscriptions and generate revenue ✅
 
 ## Key Architectural Patterns
 

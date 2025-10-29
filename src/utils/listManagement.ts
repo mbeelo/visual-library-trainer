@@ -63,9 +63,10 @@ export function validateCustomListData(data: CustomListData): string[] {
     errors.push('List name is required');
   }
 
-  if (!data.creator.trim()) {
-    errors.push('Creator name is required');
-  }
+  // Creator field is now optional (hidden from UI with default value)
+  // if (!data.creator.trim()) {
+  //   errors.push('Creator name is required');
+  // }
 
   if (!data.rawItems.trim()) {
     errors.push('At least one item is required');

@@ -43,6 +43,17 @@ export default async function handler(
           userId: userId || '',
         },
       },
+      // ✨ Brand the checkout page to match AfterImage
+      ui_mode: 'hosted',
+      custom_text: {
+        submit: {
+          message: 'Welcome to AfterImage Pro! Your visual memory training journey starts now.'
+        }
+      },
+      // Brand customization
+      payment_intent_data: undefined, // Not needed for subscriptions
+      // Custom branding (requires Stripe branding settings in dashboard)
+      // The checkout page will inherit from your Stripe Dashboard branding settings
     })
 
     return res.status(200).json({
