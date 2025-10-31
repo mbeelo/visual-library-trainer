@@ -108,10 +108,10 @@ export default function ReferencePhase({
   };
 
   const ratingOptions = [
-    { value: 'easy' as Rating, label: 'Easy', emoji: '😊' },
+    { value: 'easy' as Rating, label: 'Fantastic', emoji: '😊' },
     { value: 'got-it' as Rating, label: 'Good', emoji: '👍' },
-    { value: 'struggled' as Rating, label: 'Struggled', emoji: '😅' },
-    { value: 'failed' as Rating, label: 'Failed', emoji: '😔' }
+    { value: 'struggled' as Rating, label: 'Okay', emoji: '😅' },
+    { value: 'failed' as Rating, label: 'Needs Work', emoji: '😔' }
   ];
 
 
@@ -576,11 +576,10 @@ export default function ReferencePhase({
         <div className="text-center">
           <div className="text-center mb-6">
             <h2 className="text-3xl font-bold text-white mb-2">How did your <span className="text-slate-700">drawing</span> turn out?</h2>
-            <p className="text-white font-medium">Rate your performance to track progress</p>
           </div>
 
           {/* Rating Buttons */}
-          <div className="flex flex-wrap justify-center gap-3 mb-6">
+          <div className="flex flex-wrap justify-center gap-3 mb-3">
             {ratingOptions.map((option) => (
               <button
                 key={option.value}
@@ -594,6 +593,10 @@ export default function ReferencePhase({
                 {option.emoji} {option.label}
               </button>
             ))}
+          </div>
+
+          <div className="text-center mb-6">
+            <p className="text-white font-medium">Rate your performance to track progress</p>
           </div>
 
           {/* Action Buttons - Show after rating */}

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, ArrowLeft, BookOpen, Plus, Lightbulb } from 'lucide-react'
+import { Check, ArrowLeft, BookOpen, Plus, Lightbulb, Sparkles, ChevronDown, Copy } from 'lucide-react'
 import { CustomListData, TrainingList } from '../types'
 import { createCustomList, validateCustomListData } from '../utils'
 import { useLocalStorage } from '../hooks'
@@ -20,6 +20,8 @@ export default function CreateListPage() {
   const [errors, setErrors] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [showAIPrompts, setShowAIPrompts] = useState(false)
+  const [copySuccess, setCopySuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,6 +55,30 @@ export default function CreateListPage() {
       setIsSubmitting(false)
     }
   }
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy text:', err)
+    }
+  }
+
+  const aiPromptTemplate = `Generate a comprehensive visual art training list focused on [DESCRIBE YOUR FOCUS - e.g., "character design fundamentals", "environmental sketching", "anatomy practice", "still life objects"] with 30-50 drawing subjects organized into categories.
+
+Format as:
+Category Name:
+Subject 1
+Subject 2
+Subject 3
+
+Category Name:
+Subject 4
+Subject 5
+
+Make subjects specific enough to be useful for memory-based drawing practice, but broad enough for reference gathering.`
 
   const exampleText = `Example format:
 
@@ -214,45 +240,45 @@ Airplane`
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Tips */}
-            <div className="bg-orange-500/10 rounded-xl p-6 border border-orange-500/20">
+            <div className="bg-orange-400 border border-slate-700 rounded-xl p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 bg-orange-400 rounded-lg flex items-center justify-center">
-                  <Lightbulb className="w-4 h-4 text-slate-900" />
+                <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center">
+                  <Lightbulb className="w-4 h-4 text-orange-400" />
                 </div>
-                <h3 className="font-semibold text-white">Pro Tips</h3>
+                <h3 className="font-semibold text-slate-900">Pro Tips</h3>
               </div>
-              <ul className="space-y-3 text-sm text-slate-300">
+              <ul className="space-y-3 text-sm text-slate-900">
                 <li className="flex gap-2">
-                  <span className="text-orange-400">•</span>
+                  <span className="text-slate-700">•</span>
                   <span>Start with broad subjects, then add specific variations</span>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-orange-400">•</span>
+                  <span className="text-slate-700">•</span>
                   <span>Mix simple and complex subjects for balanced practice</span>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-orange-400">•</span>
+                  <span className="text-slate-700">•</span>
                   <span>Use categories to organize related subjects together</span>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-orange-400">•</span>
+                  <span className="text-slate-700">•</span>
                   <span>Aim for 20-50 subjects for a good practice session</span>
                 </li>
               </ul>
             </div>
 
             {/* Format Guide */}
-            <div className="bg-slate-700/30 rounded-xl p-6 border border-slate-600">
+            <div className="bg-slate-800 border border-orange-500/20 rounded-xl p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 bg-slate-600 rounded-lg flex items-center justify-center">
-                  <BookOpen className="w-4 h-4 text-slate-300" />
+                <div className="w-8 h-8 bg-orange-400 rounded-lg flex items-center justify-center">
+                  <BookOpen className="w-4 h-4 text-slate-900" />
                 </div>
                 <h3 className="font-semibold text-white">Format Examples</h3>
               </div>
               <div className="space-y-4 text-sm">
                 <div>
                   <h4 className="font-medium text-slate-300 mb-2">Simple List:</h4>
-                  <div className="bg-slate-800 p-3 rounded border border-slate-600 font-mono text-xs text-slate-300">
+                  <div className="bg-slate-700 p-3 rounded-lg border border-slate-600 font-mono text-xs text-slate-300">
                     Tree<br />
                     Mountain<br />
                     Car<br />
@@ -261,7 +287,7 @@ Airplane`
                 </div>
                 <div>
                   <h4 className="font-medium text-slate-300 mb-2">With Categories:</h4>
-                  <div className="bg-slate-800 p-3 rounded border border-slate-600 font-mono text-xs text-slate-300">
+                  <div className="bg-slate-700 p-3 rounded-lg border border-slate-600 font-mono text-xs text-slate-300">
                     Animals:<br />
                     Cat<br />
                     Dog<br />
@@ -274,8 +300,70 @@ Airplane`
               </div>
             </div>
 
+            {/* AI List Generation */}
+            <div className="bg-orange-400 border border-slate-700 rounded-xl shadow-sm">
+              <button
+                onClick={() => setShowAIPrompts(!showAIPrompts)}
+                className="w-full p-6 flex items-center justify-between hover:bg-orange-500 transition-colors rounded-xl"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-4 h-4 text-orange-400 flex-shrink-0" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-slate-900">Generate with AI</h3>
+                    <p className="text-sm text-slate-700">Create comprehensive training lists</p>
+                  </div>
+                </div>
+                <ChevronDown className={`w-5 h-5 text-slate-700 transition-transform ${showAIPrompts ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showAIPrompts && (
+                <div className="px-6 pb-6">
+                  <p className="text-sm text-slate-900 mb-4">
+                    Copy the template below and paste it into any AI platform to generate training lists. Paste the results back here.
+                  </p>
+
+                  {/* Copy Template Button */}
+                  <button
+                    onClick={() => copyToClipboard(aiPromptTemplate)}
+                    className="w-full p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors text-sm mb-4 flex items-center justify-center gap-2"
+                  >
+                    <Copy className="w-4 h-4 text-white" />
+                    <span className="font-medium text-white">
+                      {copySuccess ? 'Copied!' : 'Copy Template'}
+                    </span>
+                  </button>
+
+                  {/* AI Platform Grid */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => window.open('https://chat.openai.com/?utm_source=afterimage&utm_medium=referral&utm_campaign=ai_generation&utm_content=create_list', '_blank')}
+                      className="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors text-xs flex items-center justify-center"
+                    >
+                      <span className="font-medium text-white">ChatGPT</span>
+                    </button>
+
+                    <button
+                      onClick={() => window.open('https://claude.ai/?utm_source=afterimage&utm_medium=referral&utm_campaign=ai_generation&utm_content=create_list', '_blank')}
+                      className="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors text-xs flex items-center justify-center"
+                    >
+                      <span className="font-medium text-white">Claude</span>
+                    </button>
+
+                    <button
+                      onClick={() => window.open('https://chat.deepseek.com/?utm_source=afterimage&utm_medium=referral&utm_campaign=ai_generation&utm_content=create_list', '_blank')}
+                      className="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors text-xs flex items-center justify-center"
+                    >
+                      <span className="font-medium text-white">DeepSeek</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Stats */}
-            <div className="bg-green-500/10 rounded-xl p-6 border border-green-500/20">
+            <div className="bg-slate-800 border border-orange-500/20 rounded-xl p-6 shadow-sm">
               <h3 className="font-semibold text-white mb-2">Your Lists</h3>
               <p className="text-sm text-slate-300">
                 You currently have <strong>{customLists.length}</strong> custom training lists.

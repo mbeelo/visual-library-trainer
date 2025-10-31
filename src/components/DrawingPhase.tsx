@@ -329,16 +329,13 @@ export default function DrawingPhase({
       <div className="flex justify-center">
         <button
           onClick={onShowReferences}
-          className={`font-medium py-4 px-8 rounded-lg transition-all inline-flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 ${
+          className={`font-medium py-4 px-8 rounded-lg transition-all inline-flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-105 ${
             isTimeUp
               ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse hover:shadow-red-500/25'
               : 'bg-orange-400 hover:bg-orange-500 text-slate-900 hover:shadow-orange-500/25'
           }`}
         >
-          <Eye className="w-5 h-5" />
-          <span className="text-lg">
-            {isTimeUp ? 'Time\'s Up - Show References' : 'Finished Drawing - Show References'}
-          </span>
+          <span className="text-lg">Show References</span>
         </button>
       </div>
     </div>

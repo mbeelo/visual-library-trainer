@@ -472,3 +472,258 @@ if (!user) {
 - All services that interact with Supabase require `userId` parameter
 - Services include localStorage fallbacks for offline/unauthenticated scenarios
 - Performance optimizations include caching and timeout handling
+
+## Google Analytics Strategy - User Intelligence Goldmine
+
+### **UTM Parameter Framework**
+AfterImage uses comprehensive UTM tracking across all external links:
+
+**UTM Structure:**
+- `utm_source=afterimage` (consistent brand attribution)
+- `utm_medium=referral` (traffic type)
+- `utm_campaign=[feature]` (feature-specific tracking)
+- `utm_content=[platform]` (granular platform tracking)
+
+**Implemented UTM Campaigns:**
+1. **Reference Search** (`utm_campaign=reference_search`)
+   - Pinterest: `utm_content=pinterest`
+   - ArtStation: `utm_content=artstation`
+   - Google Images: `utm_content=google`
+   - Unsplash: `utm_content=unsplash`
+   - Pexels: `utm_content=pexels`
+   - Pixabay: `utm_content=pixabay`
+
+2. **AI Generation** (`utm_campaign=ai_generation`)
+   - ChatGPT: `utm_content=create_list`
+   - Claude: `utm_content=create_list`
+   - DeepSeek: `utm_content=create_list`
+
+### **Google Analytics 4 (GA4) Implementation Plan**
+
+#### **Essential Events to Track:**
+
+**User Journey Events:**
+```javascript
+// Landing page engagement
+gtag('event', 'engagement_time_msec', {
+  value: timeOnPage,
+  custom_parameter: 'landing_page'
+});
+
+// Trial start (first practice session)
+gtag('event', 'trial_start', {
+  currency: 'USD',
+  value: 9.00, // potential monthly value
+  item_category: 'drawing_practice'
+});
+
+// Practice session completion
+gtag('event', 'level_end', {
+  level_name: drawingSubject,
+  character_class: category,
+  success: rating === 'easy' || rating === 'got-it'
+});
+
+// Drawing performance rating
+gtag('event', 'post_score', {
+  score: ratingToScore(rating), // easy=4, good=3, okay=2, needs_work=1
+  level_name: drawingSubject,
+  character_class: category
+});
+
+// Reference image saved
+gtag('event', 'add_to_wishlist', {
+  currency: 'USD',
+  value: 0.10, // micro-value per saved reference
+  item_id: drawingSubject,
+  item_name: drawingSubject,
+  item_category: category,
+  quantity: 1
+});
+
+// Custom list creation
+gtag('event', 'create_group', {
+  group_id: listId,
+  item_category: 'custom_list',
+  value: 1.00 // engagement value
+});
+
+// AI generation usage
+gtag('event', 'share', {
+  method: 'ai_generation',
+  content_type: aiPlatform, // 'chatgpt', 'claude', 'deepseek'
+  item_id: 'ai_prompt_template'
+});
+
+// Subscription conversion
+gtag('event', 'purchase', {
+  transaction_id: checkoutSessionId,
+  value: subscriptionPrice,
+  currency: 'USD',
+  items: [{
+    item_id: 'afterimage_pro',
+    item_name: 'AfterImage Pro',
+    item_category: 'subscription',
+    item_variant: planType, // 'monthly' or 'yearly'
+    quantity: 1,
+    price: subscriptionPrice
+  }]
+});
+
+// Feature usage
+gtag('event', 'select_content', {
+  content_type: 'feature',
+  item_id: featureName // 'timer', 'algorithm_mode', 'reference_search'
+});
+```
+
+**Custom Metrics to Track:**
+1. **Drawing Performance Score** - Average rating across sessions
+2. **Session Intensity** - Drawings per session
+3. **Reference Collection Rate** - Images saved per subject
+4. **List Engagement** - Custom lists created per user
+5. **Time to Value** - Sessions until first "good" rating
+6. **Feature Adoption Rate** - % using timers, algorithms, AI generation
+
+#### **Enhanced Ecommerce Configuration:**
+
+**Funnel Analysis:**
+```javascript
+// Step 1: Landing page view
+gtag('event', 'page_view', {
+  page_title: 'AfterImage - Visual Memory Training',
+  page_location: window.location.href,
+  custom_parameter: 'marketing_funnel_start'
+});
+
+// Step 2: First practice session (trial)
+gtag('event', 'begin_checkout', {
+  currency: 'USD',
+  value: 9.00,
+  items: [{
+    item_id: 'trial_experience',
+    item_name: 'Drawing Practice Trial',
+    item_category: 'engagement',
+    quantity: 1
+  }]
+});
+
+// Step 3: Reference image limit hit (upgrade trigger)
+gtag('event', 'view_promotion', {
+  promotion_id: 'image_limit_upgrade',
+  promotion_name: 'Unlimited References',
+  creative_name: 'upgrade_modal',
+  creative_slot: 'post_drawing'
+});
+
+// Step 4: Upgrade modal view
+gtag('event', 'view_item', {
+  currency: 'USD',
+  value: subscriptionPrice,
+  items: [{
+    item_id: 'afterimage_pro',
+    item_name: 'AfterImage Pro',
+    item_category: 'subscription',
+    item_variant: planType
+  }]
+});
+
+// Step 5: Subscription purchase
+gtag('event', 'purchase', { /* as above */ });
+```
+
+#### **User Segmentation Strategy:**
+
+**Custom Dimensions:**
+1. **User Type**: 'anonymous', 'registered', 'pro_subscriber'
+2. **Skill Level**: Based on average drawing ratings
+3. **Usage Pattern**: 'casual' (<3 sessions/week), 'regular' (3-7), 'intensive' (7+)
+4. **Primary Category**: Most practiced drawing category
+5. **Acquisition Source**: 'organic', 'influencer', 'referral', 'direct'
+6. **Feature Preference**: 'timer_user', 'algorithm_user', 'ai_user'
+
+**Audience Segments:**
+- **High-Intent Artists**: Multiple sessions, good ratings, saves references
+- **Strugglers**: Low ratings, high session frequency (need encouragement)
+- **List Creators**: Users who create custom lists (content creators)
+- **Reference Collectors**: High image-saving rate (visual learners)
+- **AI Adopters**: Uses AI generation features (tech-savvy)
+- **Conversion Ready**: Anonymous users with 3+ sessions
+
+#### **Attribution & Influencer Tracking:**
+
+**Enhanced UTM Analysis:**
+```javascript
+// Track influencer attribution
+gtag('event', 'campaign_details', {
+  campaign_source: getUrlParam('utm_source'), // 'instagram_artist_x'
+  campaign_medium: getUrlParam('utm_medium'), // 'influencer_post'
+  campaign_name: getUrlParam('utm_campaign'), // 'art_challenge_2024'
+  campaign_content: getUrlParam('utm_content'), // 'story_link'
+  campaign_term: getUrlParam('utm_term') // 'digital_art'
+});
+
+// Cross-platform journey tracking
+gtag('event', 'cross_platform_activity', {
+  source_platform: referrerPlatform,
+  landing_page: currentPage,
+  time_to_action: timeToFirstPractice,
+  conversion_path: 'influencer_post -> landing -> practice -> signup'
+});
+```
+
+#### **Conversion Optimization Insights:**
+
+**Key Metrics Dashboard:**
+1. **Acquisition Metrics**:
+   - Cost per acquisition by source
+   - Influencer ROI tracking
+   - Organic vs paid conversion rates
+
+2. **Engagement Metrics**:
+   - Session depth (practices per visit)
+   - Feature adoption rates
+   - Time to value metrics
+
+3. **Retention Metrics**:
+   - Weekly/monthly active users
+   - Session frequency patterns
+   - Feature stickiness scores
+
+4. **Revenue Metrics**:
+   - Freemium conversion rates
+   - Average revenue per user (ARPU)
+   - Lifetime value by acquisition source
+
+**A/B Test Framework:**
+```javascript
+// Feature flag tracking
+gtag('event', 'experiment_impression', {
+  experiment_id: 'upgrade_modal_v2',
+  variant_id: isTestGroup ? 'treatment' : 'control',
+  experiment_name: 'what_why_how_now_framework'
+});
+
+// A/B test result tracking
+gtag('event', 'experiment_result', {
+  experiment_id: 'upgrade_modal_v2',
+  variant_id: userVariant,
+  result_type: 'conversion',
+  success: didSubscribe
+});
+```
+
+### **Implementation Priority:**
+
+1. **Phase 1 (Immediate)**: Basic GA4 setup with core events
+2. **Phase 2 (Week 2)**: Enhanced ecommerce and funnel tracking
+3. **Phase 3 (Month 1)**: Custom dimensions and audience segmentation
+4. **Phase 4 (Month 2)**: Advanced attribution and influencer ROI tracking
+
+### **Data Privacy Compliance:**
+- Cookie consent integration
+- GDPR-compliant data collection
+- User data export/deletion capabilities
+- Transparent privacy policy with analytics disclosure
+
+This analytics framework will provide unprecedented insights into user behavior, feature adoption, and conversion optimization opportunities, making AfterImage's analytics a true goldmine of actionable intelligence.
